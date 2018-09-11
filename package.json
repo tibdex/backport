@@ -1,0 +1,55 @@
+{
+  "dependencies": {
+    "github-backport": "^0.1.0",
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-flow": "^6.23.0",
+    "debug": "^3.1.0",
+    "probot": "^7.1.1",
+    "probot-commands": "^1.1.0",
+    "shared-github-internals": "^0.1.4"
+  },
+  "description": "GitHub App to backport pull requests",
+  "devDependencies": {
+    "babel-eslint": "^8.2.6",
+    "babel-jest": "^23.4.2",
+    "eslint": "^5.3.0",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-flowtype": "^2.50.0",
+    "eslint-plugin-import": "^2.13.0",
+    "eslint-plugin-security": "^1.4.0",
+    "eslint-plugin-unicorn": "^5.0.0",
+    "flow-bin": "^0.78.0",
+    "flow-typed": "^2.5.1",
+    "jest": "^23.5.0",
+    "jest-junit": "^5.1.0",
+    "nodemon": "^1.17.2",
+    "prettier": "^1.14.2",
+    "smee-client": "^1.0.2",
+    "uuid": "^3.3.2"
+  },
+  "engines": {
+    "node": ">= 6.11.2"
+  },
+  "main": "app",
+  "name": "backport",
+  "nodemonConfig": {
+    "exec": "yarn build && yarn start",
+    "watch": [
+      ".env",
+      "src"
+    ]
+  },
+  "private": true,
+  "scripts": {
+    "build": "babel src --out-dir app",
+    "dev": "nodemon",
+    "eslint": "eslint . --max-warnings 0",
+    "flow": "flow",
+    "flow-typed": "flow-typed",
+    "prettier": "prettier \"**/*.{js,json,md}\"",
+    "start": "probot run .",
+    "test": "jest"
+  }
+}
