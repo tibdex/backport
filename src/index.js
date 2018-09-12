@@ -8,10 +8,13 @@ module.exports = (app: { log(string): void }) => {
   app.log("App loaded");
 
   commands(app, "backport", async (context, command) => {
-    const base = command.arguments.trim();
+    const [base, head] = command.arguments
+      .split(" ")
+      .filter(word => word !== "");
     await backport(
       context.issue({
         base,
+        head,
         octokit: context.github,
       })
     );

@@ -7,14 +7,20 @@ Backport is a GitHub App, based on [Probot](https://probot.github.io/), to backp
 # Usage
 
 1.  :electric_plug: Install the publicly hosted [Backport GitHub App](https://github.com/apps/backporting) on your repository.
-2.  :speech_balloon: Post a comment on a pull request such as `/backport production`.
-3.  :sparkles: That's it! This pull request will be backported to the `production` branch. If the pull request cannot be backported, a comment will automatically be posted to explain why.
+2.  :speech_balloon: Let's say you want to backport a pull request on a branch named `production`. Then post the comment `/backport production` on this pull request.
+3.  :sparkles: That's it! The pull request will be backported to the `production` branch. If the pull request cannot be backported, a comment explaining why will automatically be posted.
+
+## Naming the Head Branch
+
+You can name the _head_ branch of pull requests created by Backport by passing the desired name as a second argument.
+
+For instance, `/backport production awesome-branch` would backport the commits of the original pull request to a branch called `awesome-branch` and create a new pull request to merge `my-branch` into `production`.
 
 # How it Works
 
-Backport relies on [`github-backport`](https://www.npmjs.com/package/github-backport) (which itself relies on [`github-cherry-pick`](https://www.npmjs.com/package/github-cherry-pick)) to perform all the required Git operations directly through the GitHub REST API instead of having to clone repositories on a server and executing Git CLI commands.
+Backport relies on [`github-backport`](https://www.npmjs.com/package/github-backport) to perform all the required Git operations directly through the GitHub REST API instead of having to clone repositories on a server and executing Git CLI commands.
 
-`github-backport` is the :old_key: to being able to run backport as a stateless, easy to maintain, and cheap to operate, GitHub App!
+`github-backport` is the :old_key: to being able to run Backport as a stateless, easy to maintain, and cheap to operate, GitHub App!
 
 ## Which Permissions & Webhooks Is Backport Using?
 
@@ -26,4 +32,4 @@ Backport relies on [`github-backport`](https://www.npmjs.com/package/github-back
 
 ### Webhooks
 
-- **Issue comment**: to detect command comments addressed to Backport.
+- **Issue comment**: to detect comments addressed to Backport.
