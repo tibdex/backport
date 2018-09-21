@@ -7,7 +7,7 @@ Backport is a GitHub App, based on [Probot](https://probot.github.io/), to backp
 # Usage
 
 1.  :electric_plug: Install the publicly hosted [Backport GitHub App](https://github.com/apps/backporting) on your repository.
-2.  :speech_balloon: Let's say you want to backport a pull request on a branch named `production`. Then post the comment `/backport production` on this pull request.
+2.  :speech_balloon: Let's say, as a user with write permission on the repository, you want to backport a pull request on a branch named `production`. Then post the comment `/backport production` on this pull request.
 3.  :sparkles: That's it! The pull request will be backported to the `production` branch. If the pull request cannot be backported, a comment explaining why will automatically be posted.
 
 ## Naming the Head Branch
