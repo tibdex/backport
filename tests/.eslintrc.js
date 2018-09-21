@@ -1,5 +1,5 @@
 module.exports = {
-  env: { jest: true, node: true },
+  env: { jest: true },
   extends: require.resolve("../.eslintrc"),
   parserOptions: {
     sourceType: "module",
