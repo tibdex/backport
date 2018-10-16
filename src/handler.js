@@ -1,10 +1,11 @@
 // @flow strict
 
+import { serverless } from "@probot/serverless-lambda";
 import commands from "probot-commands";
 
 import backport from "./backport";
 
-module.exports = (app: { log(string): void }) => {
+const probot = serverless((app: { log(string): void }) => {
   app.log("App loaded");
 
   commands(app, "backport", async (context, command) => {
@@ -25,4 +26,6 @@ module.exports = (app: { log(string): void }) => {
       })
     );
   });
-};
+});
+
+export { probot };
