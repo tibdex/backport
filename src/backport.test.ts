@@ -1,13 +1,20 @@
-// @flow strict
-
-import { deleteReference } from "shared-github-internals/lib/git";
+import * as Octokit from "@octokit/rest";
+import {
+  deleteReference,
+  PullRequestNumber,
+  Reference,
+  RepoName,
+  RepoOwner,
+} from "shared-github-internals/lib/git";
 import { createTestContext } from "shared-github-internals/lib/tests/context";
 import {
   createPullRequest,
   createReferences,
+  DeleteReferences,
+  RefsDetails,
 } from "shared-github-internals/lib/tests/git";
 
-import backport from "../src/backport";
+import backport, { Username } from "./backport";
 
 const [initial, dev, feature] = ["initial", "dev", "feature"];
 
@@ -26,7 +33,10 @@ const [initialCommit, devCommit, featureCommit] = [
   },
 ];
 
-let commenter, octokit, owner, repo;
+let commenter: Username;
+let octokit: Octokit;
+let owner: RepoOwner;
+let repo: RepoName;
 
 beforeAll(() => {
   ({ octokit, owner, repo } = createTestContext());
@@ -43,12 +53,12 @@ describe("nominal behavior", () => {
     },
   };
 
-  let backportedPullRequestNumber,
-    base,
-    deleteReferences,
-    featurePullRequestNumber,
-    head,
-    refsDetails;
+  let backportedPullRequestNumber: PullRequestNumber;
+  let base: Reference;
+  let deleteReferences: DeleteReferences;
+  let featurePullRequestNumber: PullRequestNumber;
+  let head: Reference;
+  let refsDetails: RefsDetails;
 
   beforeAll(async () => {
     ({ deleteReferences, refsDetails } = await createReferences({
@@ -70,9 +80,9 @@ describe("nominal behavior", () => {
       base,
       commenter,
       head,
-      number: featurePullRequestNumber,
       octokit,
       owner,
+      pullRequestNumber: featurePullRequestNumber,
       repo,
     });
   }, 20000);
@@ -102,9 +112,9 @@ describe("nominal behavior", () => {
 });
 
 describe("error messages", () => {
-  const getLastIssueComment = async number => {
+  const getLastIssueComment = async (pullRequestNumber: PullRequestNumber) => {
     const { data: comments } = await octokit.issues.getComments({
-      number,
+      number: pullRequestNumber,
       owner,
       repo,
     });
@@ -128,7 +138,10 @@ describe("error messages", () => {
       },
     };
 
-    let base, deleteReferences, number, refsDetails;
+    let base: Reference;
+    let deleteReferences: DeleteReferences;
+    let pullRequestNumber: PullRequestNumber;
+    let refsDetails: RefsDetails;
 
     beforeAll(async () => {
       ({ deleteReferences, refsDetails } = await createReferences({
@@ -138,7 +151,7 @@ describe("error messages", () => {
         state,
       }));
       base = refsDetails.master.ref;
-      number = await createPullRequest({
+      pullRequestNumber = await createPullRequest({
         base: refsDetails.dev.ref,
         head: refsDetails.feature.ref,
         octokit,
@@ -158,33 +171,38 @@ describe("error messages", () => {
           backport({
             base,
             commenter,
-            number,
             octokit,
             owner,
+            pullRequestNumber,
             repo,
-          })
+          }),
         ).rejects.toThrow("backport failed");
-        const comment = await getLastIssueComment(number);
+        const comment = await getLastIssueComment(pullRequestNumber);
         expect(comment).toMatch(
           // eslint-disable-next-line security/detect-non-literal-regexp
-          new RegExp(`The backport to \`${base}\` failed`, "u")
+          new RegExp(`The backport to \`${base}\` failed`, "u"),
         );
       },
-      15000
+      15000,
     );
   });
 
   describe("trying to backport an issue", () => {
-    let number;
+    let pullRequestNumber: PullRequestNumber;
 
     beforeAll(async () => {
       ({
-        data: { number },
+        data: { number: pullRequestNumber },
       } = await octokit.issues.create({ owner, repo, title: "Untitled" }));
     });
 
     afterAll(async () => {
-      await octokit.issues.edit({ number, owner, repo, state: "closed" });
+      await octokit.issues.edit({
+        number: pullRequestNumber,
+        owner,
+        repo,
+        state: "closed",
+      });
     });
 
     test("error and comment", async () => {
@@ -192,13 +210,13 @@ describe("error messages", () => {
         backport({
           base: "unused",
           commenter,
-          number,
           octokit,
           owner,
+          pullRequestNumber,
           repo,
-        })
+        }),
       ).rejects.toThrow("issue is not a visible pull request");
-      const comment = await getLastIssueComment(number);
+      const comment = await getLastIssueComment(pullRequestNumber);
       expect(comment).toBe("Issues cannot be backported, only pull requests.");
     });
   });
@@ -215,7 +233,9 @@ describe("error messages", () => {
       },
     };
 
-    let deleteReferences, number, refsDetails;
+    let deleteReferences: DeleteReferences;
+    let pullRequestNumber: PullRequestNumber;
+    let refsDetails: RefsDetails;
 
     beforeAll(async () => {
       ({ deleteReferences, refsDetails } = await createReferences({
@@ -224,7 +244,7 @@ describe("error messages", () => {
         repo,
         state,
       }));
-      number = await createPullRequest({
+      pullRequestNumber = await createPullRequest({
         base: refsDetails.dev.ref,
         head: refsDetails.feature.ref,
         octokit,
@@ -246,25 +266,25 @@ describe("error messages", () => {
             base,
             commenter,
             head,
-            number,
             octokit,
             owner,
+            pullRequestNumber,
             repo,
-          })
+          }),
         ).rejects.toThrow(`commenter ${owner} doesn't have write permission`);
-        const comment = await getLastIssueComment(number);
+        const comment = await getLastIssueComment(pullRequestNumber);
         expect(comment).toBe(
-          `Sorry @${owner} but you need write permission on this repository to backport a pull request.`
+          `Sorry @${owner} but you need write permission on this repository to backport a pull request.`,
         );
         await expect(
           octokit.repos.getBranch({
             branch: head,
             owner,
             repo,
-          })
+          }),
         ).rejects.toThrow(/Branch not found/u);
       },
-      15000
+      15000,
     );
   });
 });
