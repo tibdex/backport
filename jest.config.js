@@ -9,6 +9,7 @@ module.exports = {
       statements: 100,
     },
   },
+  preset: "ts-jest",
   reporters: ["default", ["jest-junit", { output: "./reports/junit.xml" }]],
   testEnvironment: "node",
 };

@@ -1,26 +1,36 @@
-// @flow strict
-
-import type { Github } from "@octokit/rest";
-import createDebug from "debug";
+import * as Octokit from "@octokit/rest";
+import * as createDebug from "debug";
 import backportPullRequest from "github-backport";
 import {
-  type PullRequestNumber,
-  type Reference,
-  type RepoName,
-  type RepoOwner,
+  PullRequestNumber,
+  Reference,
+  RepoName,
+  RepoOwner,
 } from "shared-github-internals/lib/git";
-
-import { name as packageName } from "../package";
 
 type Username = string;
 
-const debug = createDebug(packageName);
+type UserHasWritePermission = (
+  {
+    octokit,
+    owner,
+    repo,
+    username,
+  }: { octokit: Octokit; owner: RepoOwner; repo: RepoName; username: Username },
+) => Promise<boolean>;
+
+const debug = createDebug("backport");
 
 const defaultUserHasWritePermission = async ({
   octokit,
   owner,
   repo,
   username,
+}: {
+  octokit: Octokit;
+  owner: RepoOwner;
+  repo: RepoName;
+  username: Username;
 }) => {
   const {
     data: { permission },
@@ -31,11 +41,18 @@ const defaultUserHasWritePermission = async ({
 
 const ensureUserHasWritePermission = async ({
   commenter,
-  number,
   octokit,
   owner,
+  pullRequestNumber,
   repo,
   userHasWritePermission,
+}: {
+  commenter: Username;
+  octokit: Octokit;
+  owner: RepoOwner;
+  pullRequestNumber: PullRequestNumber;
+  repo: RepoName;
+  userHasWritePermission: UserHasWritePermission;
 }) => {
   try {
     debug("checking commenter permissions");
@@ -53,7 +70,7 @@ const ensureUserHasWritePermission = async ({
     debug(message, error);
     await octokit.issues.createComment({
       body: `Sorry @${commenter} but you need write permission on this repository to backport a pull request.`,
-      number,
+      number: pullRequestNumber,
       owner,
       repo,
     });
@@ -61,16 +78,26 @@ const ensureUserHasWritePermission = async ({
   }
 };
 
-const ensurePullRequest = async ({ number, octokit, owner, repo }) => {
+const ensurePullRequest = async ({
+  octokit,
+  owner,
+  pullRequestNumber,
+  repo,
+}: {
+  octokit: Octokit;
+  owner: RepoOwner;
+  pullRequestNumber: PullRequestNumber;
+  repo: RepoName;
+}) => {
   try {
     debug("checking comment is on a pull request");
-    await octokit.pullRequests.get({ number, owner, repo });
+    await octokit.pullRequests.get({ number: pullRequestNumber, owner, repo });
   } catch (error) {
     const message = "issue is not a visible pull request";
     debug(message, error);
     await octokit.issues.createComment({
       body: "Issues cannot be backported, only pull requests.",
-      number,
+      number: pullRequestNumber,
       owner,
       repo,
     });
@@ -81,18 +108,25 @@ const ensurePullRequest = async ({ number, octokit, owner, repo }) => {
 const internalBackport = async ({
   base,
   head,
-  number,
   octokit,
   owner,
+  pullRequestNumber,
   repo,
+}: {
+  base: Reference;
+  head?: Reference;
+  octokit: Octokit;
+  owner: RepoOwner;
+  pullRequestNumber: PullRequestNumber;
+  repo: RepoName;
 }) => {
   try {
     const backportedPullRequestNumber = await backportPullRequest({
       base,
       head,
-      number,
       octokit,
       owner,
+      pullRequestNumber,
       repo,
     });
     debug("backported", backportedPullRequestNumber);
@@ -108,7 +142,7 @@ const internalBackport = async ({
         error.message,
         "```",
       ].join("\n"),
-      number,
+      number: pullRequestNumber,
       owner,
       repo,
     });
@@ -120,47 +154,44 @@ const backport = async ({
   base,
   commenter,
   head,
-  number,
   octokit,
   owner,
+  pullRequestNumber,
   repo,
   // Should only be used in tests.
   _userHasWritePermission = defaultUserHasWritePermission,
 }: {
-  base: Reference,
-  commenter: Username,
-  head?: Reference,
-  number: PullRequestNumber,
-  octokit: Github,
-  owner: RepoOwner,
-  repo: RepoName,
-  _userHasWritePermission?: ({
-    octokit: Github,
-    owner: RepoOwner,
-    repo: RepoName,
-    username: Username,
-  }) => Promise<boolean>,
+  base: Reference;
+  commenter: Username;
+  head?: Reference;
+  octokit: Octokit;
+  owner: RepoOwner;
+  pullRequestNumber: PullRequestNumber;
+  repo: RepoName;
+  _userHasWritePermission?: UserHasWritePermission;
 }) => {
-  debug("starting", { base, commenter, head, number, owner, repo });
+  debug("starting", { base, commenter, head, owner, pullRequestNumber, repo });
   await ensureUserHasWritePermission({
     commenter,
-    number,
     octokit,
     owner,
+    pullRequestNumber,
     repo,
     userHasWritePermission: _userHasWritePermission,
   });
-  await ensurePullRequest({ number, octokit, owner, repo });
+  await ensurePullRequest({ octokit, owner, pullRequestNumber, repo });
 
   debug("backporting");
   return internalBackport({
     base,
     head,
-    number,
     octokit,
     owner,
+    pullRequestNumber,
     repo,
   });
 };
+
+export { Username };
 
 export default backport;
