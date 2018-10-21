@@ -10,5 +10,5 @@ declare module "probot-commands" {
     ) => void,
   ) => void;
 
-  export default commands;
+  export = commands;
 }

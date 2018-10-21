@@ -1,5 +1,5 @@
 import { Application } from "probot";
-import commands from "probot-commands";
+import * as commands from "probot-commands";
 
 import backport from "./backport";
 
