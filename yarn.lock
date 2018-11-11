@@ -3886,11 +3886,6 @@ private@^0.1.8:
   resolved "https://registry.yarnpkg.com/private/-/private-0.1.8.tgz#2381edb3689f7a53d653190060fcf822d2f368ff"
   integrity sha512-VvivMrbvd2nKkiG38qjULzlc+4Vx4wm/whI9pQD35YrARNnhxeiRktSOhSukRLFNlzg6Br/cJPet5J/u19r/mg==
 
-probot-commands@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/probot-commands/-/probot-commands-1.1.0.tgz#da485f4d2d25bfd6ec194bf5dc21a80b51e6a303"
-  integrity sha512-7pl3RZjJ2/t3h4dy/xeodkdyx6/ZZSm5ywmuZ3rPL6K7wcvguTrOobTKb/2n2G6NNnxB3rrk4z0OdEAVV/d39A==
-
 probot@^7.2.0:
   version "7.3.1"
   resolved "https://registry.yarnpkg.com/probot/-/probot-7.3.1.tgz#c18da943eb143d58857bbfc7842f98ef5b4585d4"

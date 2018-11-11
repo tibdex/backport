@@ -1,30 +1,23 @@
-import { Application } from "probot";
-import * as commands from "probot-commands";
+import { Application, Context } from "probot";
 
-import backport from "./backport";
+import handleEvent from "./backport";
 
 module.exports = (app: Application) => {
   app.log("App loaded");
 
-  commands(app, "backport", async (context, command) => {
-    const {
-      comment: {
-        user: { login: commenter },
-      },
-    } = context.payload;
-    const [base, head] = command.arguments
-      .split(" ")
-      .filter(word => word !== "");
-    const { number: pullRequestNumber, owner, repo } = context.issue();
-    await backport({
-      base,
-      commenter,
-      head,
-      // @ts-ignore The value is the good one even if the type doesn't match.
-      octokit: context.github,
-      owner,
-      pullRequestNumber,
-      repo,
-    });
-  });
+  app.on(
+    ["pull_request.labeled", "pull_request.closed"],
+    async (context: Context) => {
+      const { payload, github: octokit } = context;
+      const { number: pullRequestNumber, owner, repo } = context.issue();
+      await handleEvent({
+        // @ts-ignore The value is the good one even if the type doesn't match.
+        octokit,
+        owner,
+        payload,
+        pullRequestNumber,
+        repo,
+      });
+    },
+  );
 };
