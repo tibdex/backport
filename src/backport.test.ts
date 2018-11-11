@@ -14,7 +14,7 @@ import {
   RefsDetails,
 } from "shared-github-internals/lib/tests/git";
 
-import backport, { Username } from "./backport";
+import backport, { Label } from "./backport";
 
 const [initial, dev, feature] = ["initial", "dev", "feature"];
 
@@ -33,17 +33,57 @@ const [initialCommit, devCommit, featureCommit] = [
   },
 ];
 
-let commenter: Username;
 let octokit: Octokit;
 let owner: RepoOwner;
 let repo: RepoName;
 
-beforeAll(() => {
-  ({ octokit, owner, repo } = createTestContext());
-  commenter = owner;
+const getLabel = ({ base, head }: { base: Reference; head?: Reference }) => ({
+  name: `backport ${base}${head ? ` ${head}` : ""}`,
 });
 
-describe("nominal behavior", () => {
+const getMergedPullRequestPayload = ({
+  base,
+  head,
+  label = getLabel({ base, head }),
+  merged = true,
+}: {
+  base: Reference;
+  head?: Reference;
+  label?: Label;
+  merged?: boolean;
+}) => ({
+  pull_request: {
+    labels: [label],
+    merged,
+  },
+});
+
+const getLabeledPullRequestPayload = ({
+  base,
+  head,
+  label = getLabel({ base, head }),
+  merged = true,
+}: {
+  base: Reference;
+  head?: Reference;
+  label?: Label;
+  merged?: boolean;
+}) => ({
+  label,
+  pull_request: {
+    labels: [label],
+    merged,
+  },
+});
+
+beforeAll(() => {
+  ({ octokit, owner, repo } = createTestContext());
+});
+
+describe.each([
+  ["pull request merged", getMergedPullRequestPayload],
+  ["label added on merged pull request", getLabeledPullRequestPayload],
+])("nominal behavior for %s", (tmp, getPayload) => {
   const state = {
     initialCommit,
     refsCommits: {
@@ -76,15 +116,17 @@ describe("nominal behavior", () => {
     });
     base = refsDetails.master.ref;
     head = `backport-${featurePullRequestNumber}-head`;
-    backportedPullRequestNumber = await backport({
-      base,
-      commenter,
-      head,
+    const result = await backport({
       octokit,
       owner,
+      payload: getPayload({
+        base,
+        head,
+      }),
       pullRequestNumber: featurePullRequestNumber,
       repo,
     });
+    backportedPullRequestNumber = result as PullRequestNumber;
   }, 20000);
 
   afterAll(async () => {
@@ -109,6 +151,34 @@ describe("nominal behavior", () => {
     });
     expect(actualBase).toBe(base);
   });
+});
+
+test.each([
+  [
+    "unmerged pull request",
+    getMergedPullRequestPayload({ base: "unused", merged: false }),
+  ],
+  [
+    "unlabeled pull request",
+    getMergedPullRequestPayload({ base: "unused", label: { name: "nope" } }),
+  ],
+  [
+    "unrelated label event",
+    getLabeledPullRequestPayload({ base: "unused", label: { name: "nope" } }),
+  ],
+  [
+    "label event on unmerged pull request",
+    getLabeledPullRequestPayload({ base: "unused", merged: false }),
+  ],
+])("ignoring %s", async (tmp, payload) => {
+  const result = await backport({
+    octokit,
+    owner,
+    payload,
+    pullRequestNumber: 1337, // unused
+    repo,
+  });
+  expect(result).toBeUndefined();
 });
 
 describe("error messages", () => {
@@ -169,120 +239,17 @@ describe("error messages", () => {
       async () => {
         await expect(
           backport({
-            base,
-            commenter,
             octokit,
             owner,
+            payload: getMergedPullRequestPayload({ base }),
             pullRequestNumber,
             repo,
           }),
         ).rejects.toThrow("backport failed");
         const comment = await getLastIssueComment(pullRequestNumber);
         expect(comment).toMatch(
-          // eslint-disable-next-line security/detect-non-literal-regexp
-          new RegExp(`The backport to \`${base}\` failed`, "u"),
+          new RegExp(`The backport to \`${base}\` failed`),
         );
-      },
-      15000,
-    );
-  });
-
-  describe("trying to backport an issue", () => {
-    let pullRequestNumber: PullRequestNumber;
-
-    beforeAll(async () => {
-      ({
-        data: { number: pullRequestNumber },
-      } = await octokit.issues.create({ owner, repo, title: "Untitled" }));
-    });
-
-    afterAll(async () => {
-      await octokit.issues.edit({
-        number: pullRequestNumber,
-        owner,
-        repo,
-        state: "closed",
-      });
-    });
-
-    test("error and comment", async () => {
-      await expect(
-        backport({
-          base: "unused",
-          commenter,
-          octokit,
-          owner,
-          pullRequestNumber,
-          repo,
-        }),
-      ).rejects.toThrow("issue is not a visible pull request");
-      const comment = await getLastIssueComment(pullRequestNumber);
-      expect(comment).toBe("Issues cannot be backported, only pull requests.");
-    });
-  });
-
-  describe("commenter doesn't have write access", () => {
-    const base = "unused-base";
-    const head = "unused-head";
-
-    const state = {
-      initialCommit,
-      refsCommits: {
-        dev: [devCommit],
-        feature: [devCommit, featureCommit],
-      },
-    };
-
-    let deleteReferences: DeleteReferences;
-    let pullRequestNumber: PullRequestNumber;
-    let refsDetails: RefsDetails;
-
-    beforeAll(async () => {
-      ({ deleteReferences, refsDetails } = await createReferences({
-        octokit,
-        owner,
-        repo,
-        state,
-      }));
-      pullRequestNumber = await createPullRequest({
-        base: refsDetails.dev.ref,
-        head: refsDetails.feature.ref,
-        octokit,
-        owner,
-        repo,
-      });
-    }, 15000);
-
-    afterAll(async () => {
-      await deleteReferences();
-    });
-
-    test(
-      "error, comment and no head branch created",
-      async () => {
-        await expect(
-          backport({
-            _userHasWritePermission: () => Promise.resolve(false),
-            base,
-            commenter,
-            head,
-            octokit,
-            owner,
-            pullRequestNumber,
-            repo,
-          }),
-        ).rejects.toThrow(`commenter ${owner} doesn't have write permission`);
-        const comment = await getLastIssueComment(pullRequestNumber);
-        expect(comment).toBe(
-          `Sorry @${owner} but you need write permission on this repository to backport a pull request.`,
-        );
-        await expect(
-          octokit.repos.getBranch({
-            branch: head,
-            owner,
-            repo,
-          }),
-        ).rejects.toThrow(/Branch not found/u);
       },
       15000,
     );

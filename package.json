@@ -6,7 +6,6 @@
     "debug": "^4.0.1",
     "github-backport": "^0.2.0",
     "probot": "^7.2.0",
-    "probot-commands": "^1.1.0",
     "shared-github-internals": "^0.2.0",
     "typescript": "^3.1.3"
   },
