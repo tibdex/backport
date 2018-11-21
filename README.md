@@ -10,6 +10,10 @@ Backport is a GitHub App, based on [Probot](https://probot.github.io/), to backp
 2.  :speech_balloon: Let's say you want to backport a pull request on a branch named `production`. Then label it with `backport production`. (See [how to create labels](https://help.github.com/articles/creating-a-label/).)
 3.  :sparkles: That's it! When the pull request gets merged, it will be backported to the `production` branch. If the pull request cannot be backported, a comment explaining why will automatically be posted.
 
+## Demo
+
+![Backport demo](./assets/demo.gif)
+
 # How it Works
 
 Backport relies on [`github-backport`](https://www.npmjs.com/package/github-backport) to perform all the required Git operations directly through the GitHub REST API instead of having to clone repositories on a server and executing Git CLI commands.
