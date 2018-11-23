@@ -14,6 +14,8 @@ Backport is a GitHub App, based on [Probot](https://probot.github.io/), to backp
 
 ![Backport demo](./assets/demo.gif)
 
+This pull request has two commits and targets the `development` branch. After labeling it with `backport production` and merging it, Backport automatically creates a pull request on the `production` branch by cherry-picking these two commits.
+
 # How it Works
 
 Backport relies on [`github-backport`](https://www.npmjs.com/package/github-backport) to perform all the required Git operations directly through the GitHub REST API instead of having to clone repositories on a server and executing Git CLI commands.
