@@ -1,0 +1,13 @@
+{
+  "builds": [{ "src": "app/index.js", "use": "@now/node" }],
+  "env": {
+    "APP_ID": "@backport-app-id",
+    "DEBUG": "@backport-debug",
+    "LOG_LEVEL": "@backport-log-level",
+    "PRIVATE_KEY": "@backport-base64-encoded-private-key",
+    "SENTRY_DSN": "@backport-sentry-dsn",
+    "WEBHOOK_SECRET": "@backport-webhook-secret"
+  },
+  "routes": [{ "src": "/", "dest": "app/index.js" }],
+  "version": 2
+}
