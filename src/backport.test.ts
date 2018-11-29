@@ -183,7 +183,7 @@ test.each([
 
 describe("error messages", () => {
   const getLastIssueComment = async (pullRequestNumber: PullRequestNumber) => {
-    const { data: comments } = await octokit.issues.getComments({
+    const { data: comments } = await octokit.issues.listComments({
       number: pullRequestNumber,
       owner,
       repo,
@@ -234,24 +234,18 @@ describe("error messages", () => {
       await deleteReferences();
     });
 
-    test(
-      "error and comment",
-      async () => {
-        await expect(
-          backport({
-            octokit,
-            owner,
-            payload: getMergedPullRequestPayload({ base }),
-            pullRequestNumber,
-            repo,
-          }),
-        ).rejects.toThrow("backport failed");
-        const comment = await getLastIssueComment(pullRequestNumber);
-        expect(comment).toMatch(
-          new RegExp(`The backport to \`${base}\` failed`),
-        );
-      },
-      15000,
-    );
+    test("error and comment", async () => {
+      await expect(
+        backport({
+          octokit,
+          owner,
+          payload: getMergedPullRequestPayload({ base }),
+          pullRequestNumber,
+          repo,
+        }),
+      ).rejects.toThrow("backport failed");
+      const comment = await getLastIssueComment(pullRequestNumber);
+      expect(comment).toMatch(new RegExp(`The backport to \`${base}\` failed`));
+    }, 15000);
   });
 });
