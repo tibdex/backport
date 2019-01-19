@@ -28,8 +28,6 @@
   "scripts": {
     "check-build": "tsc --build tsconfig.build.json",
     "prettier": "prettier --ignore-path .gitignore \"**/*.{js,json,md,ts,yml}\"",
-    "prestart": "yarn build",
-    "start": "probot run .",
     "test": "jest",
     "tslint": "tslint --format stylish --project ."
   }
