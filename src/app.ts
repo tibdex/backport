@@ -1,8 +1,8 @@
 import { Application, Context } from "probot";
 
-import handleEvent from "./backport";
+import { backport } from "./backport";
 
-const appFn = (app: Application) => {
+const applicationFunction = (app: Application) => {
   app.log("App loaded");
 
   app.on(
@@ -10,7 +10,7 @@ const appFn = (app: Application) => {
     async (context: Context) => {
       const { payload, github: octokit } = context;
       const { number: pullRequestNumber, owner, repo } = context.issue();
-      await handleEvent({
+      await backport({
         // @ts-ignore The value is the good one even if the type doesn't match.
         octokit,
         owner,
@@ -22,4 +22,4 @@ const appFn = (app: Application) => {
   );
 };
 
-export = appFn;
+export { applicationFunction };

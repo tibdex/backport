@@ -1,6 +1,6 @@
 import * as Octokit from "@octokit/rest";
 import * as createDebug from "debug";
-import backportPullRequest from "github-backport";
+import { backportPullRequest } from "github-backport";
 import {
   PullRequestNumber,
   RepoName,
@@ -87,6 +87,4 @@ const backport = async ({
   }
 };
 
-export { Label };
-
-export default backport;
+export { backport, Label };

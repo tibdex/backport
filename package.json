@@ -1,24 +1,24 @@
 {
   "dependencies": {
-    "probot-serverless-now": "^0.2.1",
-    "debug": "^4.1.0",
-    "github-backport": "^0.2.0",
-    "shared-github-internals": "^0.2.0"
+    "probot-serverless-now": "^1.0.1",
+    "debug": "^4.1.1",
+    "github-backport": "^1.0.1",
+    "shared-github-internals": "^1.0.0"
   },
   "description": "GitHub App to backport pull requests",
   "devDependencies": {
-    "@octokit/rest": "^15.18.0",
+    "@octokit/rest": "^16.8.0",
     "@types/debug": "^0.0.31",
-    "@types/jest": "^23.3.10",
-    "@types/node": "^10.12.10",
+    "@types/jest": "^23.3.13",
+    "@types/node": "^10.12.18",
     "jest": "^23.6.0",
-    "jest-junit": "^5.1.0",
-    "probot": "^7.4.0",
-    "prettier": "^1.15.2",
+    "jest-junit": "^6.0.1",
+    "probot": "^8.0.0-beta.1",
+    "prettier": "^1.15.3",
     "ts-jest": "^23.10.5",
-    "tslint": "^5.11.0",
+    "tslint": "^5.12.1",
     "tslint-config-prettier": "^1.17.0",
-    "typescript": "^3.2.1"
+    "typescript": "^3.2.4"
   },
   "engines": {
     "node": ">= 8.10.0"
