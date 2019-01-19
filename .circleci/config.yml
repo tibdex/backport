@@ -27,7 +27,7 @@ jobs:
       - run: sudo yarn global add now --prefix /usr/local
       - run: now --no-clipboard --token $NOW_TOKEN
       - run: now --token $NOW_TOKEN alias $NOW_ALIAS
-      - run: now --token $NOW_TOKEN rm autorebase --safe --yes
+      - run: now --token $NOW_TOKEN rm backport --safe --yes
 
 workflows:
   check:
