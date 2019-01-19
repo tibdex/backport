@@ -1,4 +1,5 @@
-version: 2
+version: 2.1
+
 jobs:
   check:
     docker:
@@ -26,16 +27,18 @@ jobs:
       - run: sudo yarn global add now --prefix /usr/local
       - run: now --no-clipboard --token $NOW_TOKEN
       - run: now --token $NOW_TOKEN alias $NOW_ALIAS
-      - run: now --token $NOW_TOKEN rm backport --safe --yes
+      - run: now --token $NOW_TOKEN rm autorebase --safe --yes
 
 workflows:
-  version: 2
-  check-or-deploy:
+  check:
     jobs:
       - check:
           filters:
             branches:
               ignore: master
+
+  deploy:
+    jobs:
       - deploy:
           filters:
             branches:
