@@ -1,20 +1,20 @@
 import * as Octokit from "@octokit/rest";
 import {
-  deleteReference,
+  deleteRef,
   PullRequestNumber,
-  Reference,
+  Ref,
   RepoName,
   RepoOwner,
 } from "shared-github-internals/lib/git";
 import { createTestContext } from "shared-github-internals/lib/tests/context";
 import {
   createPullRequest,
-  createReferences,
-  DeleteReferences,
+  createRefs,
+  DeleteRefs,
   RefsDetails,
 } from "shared-github-internals/lib/tests/git";
 
-import backport, { Label } from "./backport";
+import { backport, Label } from "./backport";
 
 const [initial, dev, feature] = ["initial", "dev", "feature"];
 
@@ -37,7 +37,7 @@ let octokit: Octokit;
 let owner: RepoOwner;
 let repo: RepoName;
 
-const getLabel = ({ base, head }: { base: Reference; head?: Reference }) => ({
+const getLabel = ({ base, head }: { base: Ref; head?: Ref }) => ({
   name: `backport ${base}${head ? ` ${head}` : ""}`,
 });
 
@@ -47,8 +47,8 @@ const getMergedPullRequestPayload = ({
   label = getLabel({ base, head }),
   merged = true,
 }: {
-  base: Reference;
-  head?: Reference;
+  base: Ref;
+  head?: Ref;
   label?: Label;
   merged?: boolean;
 }) => ({
@@ -64,8 +64,8 @@ const getLabeledPullRequestPayload = ({
   label = getLabel({ base, head }),
   merged = true,
 }: {
-  base: Reference;
-  head?: Reference;
+  base: Ref;
+  head?: Ref;
   label?: Label;
   merged?: boolean;
 }) => ({
@@ -94,14 +94,14 @@ describe.each([
   };
 
   let backportedPullRequestNumber: PullRequestNumber;
-  let base: Reference;
-  let deleteReferences: DeleteReferences;
+  let base: Ref;
+  let deleteRefs: DeleteRefs;
   let featurePullRequestNumber: PullRequestNumber;
-  let head: Reference;
+  let head: Ref;
   let refsDetails: RefsDetails;
 
   beforeAll(async () => {
-    ({ deleteReferences, refsDetails } = await createReferences({
+    ({ deleteRefs, refsDetails } = await createRefs({
       octokit,
       owner,
       repo,
@@ -130,8 +130,8 @@ describe.each([
   }, 20000);
 
   afterAll(async () => {
-    await deleteReferences();
-    await deleteReference({
+    await deleteRefs();
+    await deleteRef({
       octokit,
       owner,
       ref: head,
@@ -144,7 +144,7 @@ describe.each([
       data: {
         base: { ref: actualBase },
       },
-    } = await octokit.pullRequests.get({
+    } = await octokit.pulls.get({
       number: backportedPullRequestNumber,
       owner,
       repo,
@@ -208,13 +208,13 @@ describe("error messages", () => {
       },
     };
 
-    let base: Reference;
-    let deleteReferences: DeleteReferences;
+    let base: Ref;
+    let deleteRefs: DeleteRefs;
     let pullRequestNumber: PullRequestNumber;
     let refsDetails: RefsDetails;
 
     beforeAll(async () => {
-      ({ deleteReferences, refsDetails } = await createReferences({
+      ({ deleteRefs, refsDetails } = await createRefs({
         octokit,
         owner,
         repo,
@@ -231,7 +231,7 @@ describe("error messages", () => {
     }, 15000);
 
     afterAll(async () => {
-      await deleteReferences();
+      await deleteRefs();
     });
 
     test("error and comment", async () => {
