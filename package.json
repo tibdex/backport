@@ -23,11 +23,10 @@
   "engines": {
     "node": ">= 8.10.0"
   },
-  "main": "app",
   "name": "backport",
   "private": true,
   "scripts": {
-    "build": "tsc --build tsconfig.build.json",
+    "check-build": "tsc --build tsconfig.build.json",
     "prettier": "prettier --ignore-path .gitignore \"**/*.{js,json,md,ts,yml}\"",
     "prestart": "yarn build",
     "start": "probot run .",

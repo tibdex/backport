@@ -1,5 +1,5 @@
 {
-  "builds": [{ "src": "app/index.js", "use": "@now/node" }],
+  "builds": [{ "src": "src/index.ts", "use": "@now/node@canary" }],
   "env": {
     "APP_ID": "@backport-app-id",
     "DEBUG": "@backport-debug",
@@ -8,6 +8,6 @@
     "SENTRY_DSN": "@backport-sentry-dsn",
     "WEBHOOK_SECRET": "@backport-webhook-secret"
   },
-  "routes": [{ "src": "/", "dest": "app/index.js" }],
+  "routes": [{ "src": "/", "dest": "src/index.ts" }],
   "version": 2
 }
