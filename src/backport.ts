@@ -1,6 +1,7 @@
 import * as Octokit from "@octokit/rest";
 import * as createDebug from "debug";
 import { backportPullRequest } from "github-backport";
+import pSeries from "p-series";
 import {
   PullRequestNumber,
   RepoName,
@@ -23,33 +24,20 @@ const debug = createDebug("backport");
 
 const regExp = /^backport ([^ ]+)(?: ([^ ]+))?$/;
 
-const backport = async ({
+const backportForLabel = async ({
+  label,
   octokit,
   owner,
-  payload,
   pullRequestNumber,
   repo,
 }: {
+  label: LabelName;
   octokit: Octokit;
   owner: RepoOwner;
-  payload: Payload;
   pullRequestNumber: PullRequestNumber;
   repo: RepoName;
-}) => {
-  const labelName = payload.pull_request.labels
-    .map(({ name }) => name)
-    .find(name => regExp.test(name));
-  if (
-    !labelName ||
-    !payload.pull_request.merged ||
-    (payload.label && !regExp.test(payload.label.name))
-  ) {
-    // Ignore unlabeled or unmerged pull requests and unrelated label events.
-    return;
-  }
-  // Thanks to the code above, we're sure that labelName matches.
-  const [, base, head] = regExp.exec(labelName) as string[];
-
+}): Promise<PullRequestNumber> => {
+  const [, base, head] = regExp.exec(label) as string[];
   debug("backporting", {
     base,
     head,
@@ -85,6 +73,49 @@ const backport = async ({
     });
     throw new Error(message);
   }
+};
+
+const backport = async ({
+  octokit,
+  owner,
+  payload,
+  pullRequestNumber,
+  repo,
+}: {
+  octokit: Octokit;
+  owner: RepoOwner;
+  payload: Payload;
+  pullRequestNumber: PullRequestNumber;
+  repo: RepoName;
+}): Promise<PullRequestNumber[]> => {
+  if (payload.pull_request.merged) {
+    if (payload.label) {
+      const label = payload.label.name;
+      if (regExp.test(label)) {
+        const backportedPullRequestNumber = await backportForLabel({
+          label,
+          octokit,
+          owner,
+          pullRequestNumber,
+          repo,
+        });
+        return [backportedPullRequestNumber];
+      }
+    } else {
+      // We're in the merged PR situation.
+      const backportLabels = payload.pull_request.labels
+        .map(({ name }) => name)
+        .filter(name => regExp.test(name));
+      return pSeries(
+        backportLabels.map(label => () =>
+          backportForLabel({ label, octokit, owner, pullRequestNumber, repo }),
+        ),
+      );
+    }
+  }
+
+  // nop
+  return [];
 };
 
 export { backport, Label };

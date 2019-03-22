@@ -12,4 +12,5 @@ module.exports = {
   preset: "ts-jest",
   reporters: ["default", ["jest-junit", { output: "./reports/junit.xml" }]],
   testEnvironment: "node",
+  testRunner: "jest-circus/runner",
 };
