@@ -250,16 +250,20 @@ test.each([
       },
     },
   ],
-])("ignoring %s", async (tmp, payload) => {
-  const backportedPullRequestNumbers = await backport({
-    octokit,
-    owner,
-    payload,
-    pullRequestNumber: 1337, // unused
-    repo,
-  });
-  expect(backportedPullRequestNumbers).toHaveLength(0);
-});
+])(
+  "ignoring %s",
+  // @ts-ignore
+  async (tmp, payload) => {
+    const backportedPullRequestNumbers = await backport({
+      octokit,
+      owner,
+      payload: payload as any,
+      pullRequestNumber: 1337, // unused
+      repo,
+    });
+    expect(backportedPullRequestNumbers).toHaveLength(0);
+  },
+);
 
 describe("error messages", () => {
   const getLastIssueComment = async (pullRequestNumber: PullRequestNumber) => {
