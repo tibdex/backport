@@ -3,6 +3,7 @@ import * as createDebug from "debug";
 import { backportPullRequest } from "github-backport";
 import pSeries from "p-series";
 import {
+  fetchCommits,
   PullRequestNumber,
   RepoName,
   RepoOwner,
@@ -57,6 +58,13 @@ const backportForLabel = async ({
     debug("backported", backportedPullRequestNumber);
     return backportedPullRequestNumber;
   } catch (error) {
+    const commitsToCherryPick = await fetchCommits({
+      octokit,
+      owner,
+      pullRequestNumber,
+      repo,
+    });
+    const definedHead = head || `backport-${pullRequestNumber}-on-${base}`;
     const message = "backport failed";
     debug(message, error);
     await octokit.issues.createComment({
@@ -66,6 +74,20 @@ const backportForLabel = async ({
         "```",
         error.message,
         "```",
+        "To backport manually, run these commands in your terminal:",
+        "```bash",
+        "# Switch to the desired base branch.",
+        `git checkout ${base}`,
+        "# Update it to its latest state from GitHub.",
+        "git pull --rebase",
+        "# Cherry-pick all the commits of this pull request.",
+        `git cherry-pick ${commitsToCherryPick.join(" ")}`,
+        "# Create a new branch with these backported commits.",
+        `git checkout -b ${definedHead}`,
+        "# Push it to GitHub.",
+        `git push --set-upstream origin ${definedHead}`,
+        "```",
+        `Then, create a pull request where the \`base\` branch is \`${base}\` and the \`compare\`/\`head\` branch is \`${definedHead}\`.`,
       ].join("\n"),
       number: pullRequestNumber,
       owner,
