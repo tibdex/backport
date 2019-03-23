@@ -1697,10 +1697,10 @@ getpass@^0.1.1:
   dependencies:
     assert-plus "^1.0.0"
 
-github-backport@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/github-backport/-/github-backport-1.0.1.tgz#662a92e4e7731181b345009883c2a3df0258a837"
-  integrity sha512-8x8L49mmrxYhE0TLaMptxj5iugf21Mba8DrNb54+aNI1mk8CYFNSCznYZSchS+O2puCfIpDfMyVAfwklhCfPZA==
+github-backport@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/github-backport/-/github-backport-1.1.0.tgz#d569557653bf18e113a02ee99c5b43a0bdfc187d"
+  integrity sha512-QqMpTQHAUxbKiVlQN1PBNIqcAf59eYxXHO83nHr3W0KsMQv5aT2y3Z7WNqY/Rwr8y+fbLYIF6kj1uA2F341CbQ==
   dependencies:
     "@octokit/rest" "^16.8.0"
     "@types/debug" "^0.0.31"

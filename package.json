@@ -3,7 +3,7 @@
     "p-series": "^2.0.0",
     "probot-serverless-now": "^1.0.1",
     "debug": "^4.1.1",
-    "github-backport": "^1.0.1",
+    "github-backport": "^1.1.0",
     "shared-github-internals": "^1.0.0"
   },
   "description": "GitHub App to backport pull requests",
