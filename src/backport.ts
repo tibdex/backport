@@ -64,7 +64,7 @@ const backportForLabel = async ({
       pullRequestNumber,
       repo,
     });
-    const definedHead = head || `backport-${pullRequestNumber}-on-${base}`;
+    const definedHead = head || `backport-${pullRequestNumber}-to-${base}`;
     const message = "backport failed";
     debug(message, error);
     await octokit.issues.createComment({
