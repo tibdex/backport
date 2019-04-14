@@ -65,8 +65,7 @@ const backportForLabel = async ({
       repo,
     });
     const definedHead = head || `backport-${pullRequestNumber}-to-${base}`;
-    const message = "backport failed";
-    debug(message, error);
+    debug("backport failed", error);
     await octokit.issues.createComment({
       body: [
         `The backport to \`${base}\` failed:`,
@@ -99,7 +98,7 @@ const backportForLabel = async ({
       owner,
       repo,
     });
-    throw new Error(message);
+    throw new Error(base);
   }
 };
 
@@ -134,11 +133,31 @@ const backport = async ({
       const backportLabels = payload.pull_request.labels
         .map(({ name }) => name)
         .filter(name => regExp.test(name));
-      return pSeries(
-        backportLabels.map(label => () =>
-          backportForLabel({ label, octokit, owner, pullRequestNumber, repo }),
-        ),
+      const results = await pSeries(
+        backportLabels.map(label => async () => {
+          try {
+            return await backportForLabel({
+              label,
+              octokit,
+              owner,
+              pullRequestNumber,
+              repo,
+            });
+          } catch (error) {
+            return error;
+          }
+        }),
       );
+
+      const errors = results.filter(result => result instanceof Error);
+
+      if (errors.length > 0) {
+        throw new Error(
+          `backport(s) to ${errors.map(error => error.message)} failed`,
+        );
+      }
+
+      return results;
     }
   }
 
