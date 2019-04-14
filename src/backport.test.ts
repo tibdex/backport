@@ -332,7 +332,7 @@ describe("error messages", () => {
           pullRequestNumber,
           repo,
         }),
-      ).rejects.toThrow("backport failed");
+      ).rejects.toThrow(/backport.+failed/);
       const comment = await getLastIssueComment(pullRequestNumber);
       expect(comment).toMatch(new RegExp(`The backport to \`${base}\` failed`));
     }, 30000);
