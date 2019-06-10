@@ -103,8 +103,8 @@ describe("nominal behavior", () => {
               head: { ref },
             },
           } = await octokit.pulls.get({
-            number: pullRequestNumber,
             owner,
+            pull_number: pullRequestNumber,
             repo,
           });
           await deleteRef({
@@ -125,8 +125,8 @@ describe("nominal behavior", () => {
               base: { ref: actualBase },
             },
           } = await octokit.pulls.get({
-            number: pullRequestNumber,
             owner,
+            pull_number: pullRequestNumber,
             repo,
           });
           return actualBase;
@@ -202,8 +202,8 @@ describe("nominal behavior", () => {
           base: { ref: actualBase },
         },
       } = await octokit.pulls.get({
-        number: backportedPullRequestNumber,
         owner,
+        pull_number: backportedPullRequestNumber,
         repo,
       });
       expect(actualBase).toBe(base);
