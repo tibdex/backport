@@ -1,168 +1,247 @@
-import * as Octokit from "@octokit/rest";
-import * as createDebug from "debug";
-import { backportPullRequest } from "github-backport";
-import pSeries from "p-series";
-import {
-  fetchCommits,
-  PullRequestNumber,
-  RepoName,
-  RepoOwner,
-} from "shared-github-internals/lib/git";
+import { error as logError, group, warning, info } from "@actions/core";
+import { exec } from "@actions/exec";
+import { GitHub } from "@actions/github";
+import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 
-type LabelName = string;
+const labelRegExp = /^backport ([^ ]+)(?: ([^ ]+))?$/;
 
-type Label = { name: LabelName };
-
-type Payload = {
-  label?: Label;
-  pull_request: {
-    labels: Label[];
-    merged: boolean;
-  };
+const getLabelNames = ({
+  action,
+  label,
+  labels,
+}: {
+  action: WebhookPayloadPullRequest["action"];
+  label: { name: string };
+  labels: WebhookPayloadPullRequest["pull_request"]["labels"];
+}): string[] => {
+  switch (action) {
+    case "closed":
+      return labels.map(({ name }) => name);
+    case "labeled":
+      return [label.name];
+    default:
+      return [];
+  }
 };
 
-const debug = createDebug("backport");
-
-const regExp = /^backport ([^ ]+)(?: ([^ ]+))?$/;
-
-const backportForLabel = async ({
+const getBackportBaseToHead = ({
+  action,
   label,
-  octokit,
-  owner,
+  labels,
   pullRequestNumber,
+}: {
+  action: WebhookPayloadPullRequest["action"];
+  label: { name: string };
+  labels: WebhookPayloadPullRequest["pull_request"]["labels"];
+  pullRequestNumber: number;
+}): { [base: string]: string } =>
+  getLabelNames({ action, label, labels }).reduce((baseToHead, labelName) => {
+    const matches = labelRegExp.exec(labelName);
+    if (matches === null) {
+      return baseToHead;
+    }
+
+    const [, base, head = `backport-${pullRequestNumber}-to-${base}`] = matches;
+    return { ...baseToHead, [base]: head };
+  }, {});
+
+const warnIfSquashIsNotTheOnlyAllowedMergeMethod = async ({
+  github,
+  owner,
   repo,
 }: {
-  label: LabelName;
-  octokit: Octokit;
-  owner: RepoOwner;
-  pullRequestNumber: PullRequestNumber;
-  repo: RepoName;
-}): Promise<PullRequestNumber> => {
-  const [, base, head] = regExp.exec(label) as string[];
-  debug("backporting", {
+  github: GitHub;
+  owner: string;
+  repo: string;
+}) => {
+  const {
+    data: { allow_merge_commit, allow_rebase_merge },
+  } = await github.repos.get({ owner, repo });
+  if (allow_merge_commit || allow_rebase_merge) {
+    warning(
+      [
+        "Your repository allows merge commits and rebase merging.",
+        " However, Backport only supports rebased and merged pull requests with a single commit and squashed and merged pull requests.",
+        " Consider only allowing squash merging.",
+        " See https://help.github.com/en/github/administering-a-repository/about-merge-methods-on-github for more information.",
+      ].join("\n"),
+    );
+  }
+};
+
+const backportOnce = async ({
+  base,
+  body,
+  commitToBackport,
+  github,
+  head,
+  owner,
+  repo,
+  title,
+}: {
+  base: string;
+  body: string;
+  commitToBackport: string;
+  github: GitHub;
+  head: string;
+  owner: string;
+  repo: string;
+  title: string;
+}) => {
+  const git = async (...args: string[]) => {
+    await exec("git", args, { cwd: repo });
+  };
+
+  await git("switch", base);
+  await git("switch", "--create", head);
+  try {
+    await git("cherry-pick", commitToBackport);
+  } catch (error) {
+    await git("cherry-pick", "--abort");
+    throw error;
+  }
+
+  await git("push", "--set-upstream", "origin", head);
+  await github.pulls.create({
     base,
+    body,
     head,
     owner,
-    pullRequestNumber,
     repo,
+    title,
   });
-  try {
-    const backportedPullRequestNumber = await backportPullRequest({
-      base,
-      head,
-      octokit,
-      owner,
-      pullRequestNumber,
-      repo,
-    });
-    debug("backported", backportedPullRequestNumber);
-    return backportedPullRequestNumber;
-  } catch (error) {
-    const commitsToCherryPick = await fetchCommits({
-      octokit,
-      owner,
-      pullRequestNumber,
-      repo,
-    });
-    const definedHead = head || `backport-${pullRequestNumber}-to-${base}`;
-    debug("backport failed", error);
-    await octokit.issues.createComment({
-      body: [
-        `The backport to \`${base}\` failed:`,
-        "",
-        "```",
-        error.message,
-        "```",
-        "To backport manually, run these commands in your terminal:",
-        "```bash",
-        "# Fetch latest updates from GitHub.",
-        "git fetch",
-        "# Create new working tree.",
-        `git worktree add .worktrees/backport ${base}`,
-        "# Navigate to the new directory.",
-        "cd .worktrees/backport",
-        "# Cherry-pick all the commits of this pull request and resolve the likely conflicts.",
-        `git cherry-pick ${commitsToCherryPick.join(" ")}`,
-        "# Create a new branch with these backported commits.",
-        `git checkout -b ${definedHead}`,
-        "# Push it to GitHub.",
-        `git push --set-upstream origin ${definedHead}`,
-        "# Go back to the original working tree.",
-        "cd ../..",
-        "# Delete the working tree.",
-        "git worktree remove .worktrees/backport",
-        "```",
-        `Then, create a pull request where the \`base\` branch is \`${base}\` and the \`compare\`/\`head\` branch is \`${definedHead}\`.`,
-      ].join("\n"),
-      number: pullRequestNumber,
-      owner,
-      repo,
-    });
-    throw new Error(base);
-  }
+};
+
+const getFailedBackportCommentBody = ({
+  base,
+  commitToBackport,
+  errorMessage,
+  head,
+}: {
+  base: string;
+  commitToBackport: string;
+  errorMessage: string;
+  head: string;
+}) => {
+  const worktreePath = `.worktrees/backport-${base}`;
+  return [
+    `The backport to \`${base}\` failed:`,
+    "```",
+    errorMessage,
+    "```",
+    "To backport manually, run these commands in your terminal:",
+    "```bash",
+    "# Fetch latest updates from GitHub",
+    "git fetch",
+    "# Create a new working tree",
+    `git worktree add ${worktreePath} ${base}`,
+    "# Navigate to the new working tree",
+    `cd ${worktreePath}`,
+    "# Create a new branch",
+    `git switch --create ${head}`,
+    "# Cherry-pick the merged commit of this pull request and resolve the conflicts",
+    `git cherry-pick ${commitToBackport}`,
+    "# Push it to GitHub",
+    `git push --set-upstream origin ${head}`,
+    "# Go back to the original working tree",
+    "cd ../..",
+    "# Delete the working tree",
+    `git worktree remove ${worktreePath}`,
+    "```",
+    `Then, create a pull request where the \`base\` branch is \`${base}\` and the \`compare\`/\`head\` branch is \`${head}\`.`,
+  ].join("\n");
 };
 
 const backport = async ({
-  octokit,
-  owner,
-  payload,
-  pullRequestNumber,
-  repo,
+  payload: {
+    action,
+    // The payload has a label property when the action is "labeled".
+    // @ts-ignore
+    label,
+    pull_request: {
+      labels,
+      merge_commit_sha: mergeCommitSha,
+      merged,
+      number: pullRequestNumber,
+      title: originalTitle,
+    },
+    repository: {
+      name: repo,
+      owner: { login: owner },
+    },
+  },
+  token,
 }: {
-  octokit: Octokit;
-  owner: RepoOwner;
-  payload: Payload;
-  pullRequestNumber: PullRequestNumber;
-  repo: RepoName;
-}): Promise<PullRequestNumber[]> => {
-  if (payload.pull_request.merged) {
-    if (payload.label) {
-      const label = payload.label.name;
-      if (regExp.test(label)) {
-        const backportedPullRequestNumber = await backportForLabel({
-          label,
-          octokit,
-          owner,
-          pullRequestNumber,
-          repo,
-        });
-        return [backportedPullRequestNumber];
-      }
-    } else {
-      // We're in the merged PR situation.
-      const backportLabels = payload.pull_request.labels
-        .map(({ name }) => name)
-        .filter(name => regExp.test(name));
-      const results = await pSeries(
-        backportLabels.map(label => async () => {
-          try {
-            return await backportForLabel({
-              label,
-              octokit,
-              owner,
-              pullRequestNumber,
-              repo,
-            });
-          } catch (error) {
-            return error;
-          }
-        }),
-      );
-
-      const errors = results.filter(result => result instanceof Error);
-
-      if (errors.length > 0) {
-        throw new Error(
-          `backport(s) to ${errors.map(error => error.message)} failed`,
-        );
-      }
-
-      return results;
-    }
+  payload: WebhookPayloadPullRequest;
+  token: string;
+}) => {
+  if (!merged) {
+    return;
   }
 
-  // nop
-  return [];
+  const backportBaseToHead = getBackportBaseToHead({
+    action,
+    label,
+    labels,
+    pullRequestNumber,
+  });
+
+  if (Object.keys(backportBaseToHead).length === 0) {
+    return;
+  }
+
+  const github = new GitHub(token);
+
+  await warnIfSquashIsNotTheOnlyAllowedMergeMethod({ github, owner, repo });
+
+  // The merge commit SHA is actually not null.
+  const commitToBackport = String(mergeCommitSha);
+  info(`Backporting ${commitToBackport} from #${pullRequestNumber}`);
+
+  await exec("git", [
+    "clone",
+    `https://x-access-token:${token}@github.com/${owner}/${repo}.git`,
+  ]);
+  await exec("git", [
+    "config",
+    "--global",
+    "user.email",
+    "github-actions[bot]@users.noreply.github.com",
+  ]);
+  await exec("git", ["config", "--global", "user.name", "github-actions[bot]"]);
+
+  for (const [base, head] of Object.entries(backportBaseToHead)) {
+    const body = `Backport ${commitToBackport} from #${pullRequestNumber}`;
+    const title = `[Backport ${base}] ${originalTitle}`;
+    await group(`Backporting to ${base} on ${head}`, async () => {
+      try {
+        await backportOnce({
+          base,
+          body,
+          commitToBackport,
+          github,
+          head,
+          owner,
+          repo,
+          title,
+        });
+      } catch (error) {
+        const errorMessage = error.message;
+        logError(`Backport failed: ${errorMessage}`);
+        await github.issues.createComment({
+          body: getFailedBackportCommentBody({
+            base,
+            commitToBackport,
+            errorMessage,
+            head,
+          }),
+          issue_number: pullRequestNumber,
+          owner,
+          repo,
+        });
+      }
+    });
+  }
 };
 
-export { backport, Label };
+export { backport };

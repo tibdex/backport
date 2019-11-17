@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
-    "module": "CommonJS",
-    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noEmitOnError": true,
     "strict": true,
-    "target": "ES2017"
-  }
+    "target": "esnext",
+    "types": ["node"]
+  },
+  "include": [".*.js", "*.js", "src"]
 }

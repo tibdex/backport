@@ -1,0 +1,13 @@
+name: Backporting
+author: Thibault Derousseaux <tibdex@gmail.com>
+description: Automatically backport PRs to other branches by simply labeling them.
+inputs:
+  github_token:
+    description: Token for the GitHub API.
+    required: true
+runs:
+  using: node12
+  main: dist/index.js
+branding:
+  icon: arrow-left-circle
+  color: purple

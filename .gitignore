@@ -1,4 +1,2 @@
-/.env
-/coverage/
-/node_modules/
-/reports/
+/dist
+/node_modules
