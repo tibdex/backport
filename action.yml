@@ -5,6 +5,10 @@ inputs:
   github_token:
     description: Token for the GitHub API.
     required: true
+  title_template:
+    description: A template for the title of the PR.
+    required: false
+    default: "[Backport {{base}}] {{originalTitle}}"
 runs:
   using: node12
   main: dist/index.js

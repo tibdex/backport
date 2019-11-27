@@ -170,9 +170,11 @@ const backport = async ({
       owner: { login: owner },
     },
   },
+  titleTemplate,
   token,
 }: {
   payload: WebhookPayloadPullRequest;
+  titleTemplate: string;
   token: string;
 }) => {
   if (!merged) {
@@ -212,7 +214,14 @@ const backport = async ({
 
   for (const [base, head] of Object.entries(backportBaseToHead)) {
     const body = `Backport ${commitToBackport} from #${pullRequestNumber}`;
-    const title = `[Backport ${base}] ${originalTitle}`;
+    const titleVars = {
+      base,
+      originalTitle,
+    };
+    const title = Object.entries(titleVars).reduce(
+      (t: string, [key, value]) => t.replace(`{{${key}}}`, value),
+      titleTemplate,
+    );
     await group(`Backporting to ${base} on ${head}`, async () => {
       try {
         await backportOnce({
