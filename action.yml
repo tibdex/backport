@@ -5,6 +5,9 @@ inputs:
   github_token:
     description: Token for the GitHub API.
     required: true
+  add_labels:
+    description: A comma separated list of labels to add to the backport PR.
+    required: false
 runs:
   using: node12
   main: dist/index.js
