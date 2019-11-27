@@ -2,6 +2,7 @@ import { error as logError, group, warning, info } from "@actions/core";
 import { exec } from "@actions/exec";
 import { GitHub } from "@actions/github";
 import { WebhookPayloadPullRequest } from "@octokit/webhooks";
+import escapeRegExp from "lodash.escaperegexp";
 
 const labelRegExp = /^backport ([^ ]+)(?: ([^ ]+))?$/;
 
@@ -219,7 +220,8 @@ const backport = async ({
       originalTitle,
     };
     const title = Object.entries(titleVars).reduce(
-      (t: string, [key, value]) => t.replace(`{{${key}}}`, value),
+      (t: string, [key, value]) =>
+        t.replace(new RegExp(escapeRegExp(`{{${key}}}`), "g"), value),
       titleTemplate,
     );
     await group(`Backporting to ${base} on ${head}`, async () => {
