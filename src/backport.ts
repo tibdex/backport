@@ -78,6 +78,7 @@ const backportOnce = async ({
   owner,
   repo,
   title,
+  user,
 }: {
   base: string;
   body: string;
@@ -87,6 +88,7 @@ const backportOnce = async ({
   owner: string;
   repo: string;
   title: string;
+  user: string;
 }) => {
   const git = async (...args: string[]) => {
     await exec("git", args, { cwd: repo });
@@ -105,7 +107,8 @@ const backportOnce = async ({
   await github.pulls.create({
     base,
     body,
-    head,
+    head: `${user}:${head}`,
+    maintainer_can_modify: true,
     owner,
     repo,
     title,
@@ -169,6 +172,8 @@ const backport = async ({
       name: repo,
       owner: { login: owner },
     },
+    // @ts-ignore
+    user: { login: user },
   },
   token,
 }: {
@@ -200,8 +205,20 @@ const backport = async ({
 
   await exec("git", [
     "clone",
-    `https://x-access-token:${token}@github.com/${owner}/${repo}.git`,
+    `https://x-access-token:${token}@github.com/${user}/${repo}.git`,
   ]);
+
+  const git = async (...args: string[]) => {
+    await exec("git", args, { cwd: repo });
+  };
+
+  await git(
+    "remote",
+    "add",
+    "upstream",
+    `https://x-access-token:${token}@github.com/${owner}/${repo}.git`,
+  );
+
   await exec("git", [
     "config",
     "--global",
@@ -224,6 +241,7 @@ const backport = async ({
           owner,
           repo,
           title,
+          user,
         });
       } catch (error) {
         const errorMessage = error.message;
