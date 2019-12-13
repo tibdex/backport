@@ -75,6 +75,7 @@ const backportOnce = async ({
   commitToBackport,
   github,
   head,
+  originalTitle,
   owner,
   repo,
   title,
@@ -85,6 +86,7 @@ const backportOnce = async ({
   commitToBackport: string;
   github: GitHub;
   head: string;
+  originalTitle: string;
   owner: string;
   repo: string;
   title: string;
@@ -97,7 +99,9 @@ const backportOnce = async ({
   await git("switch", base);
   await git("switch", "--create", head);
   try {
-    await git("cherry-pick", commitToBackport);
+    await git("cherry-pick", "-n", commitToBackport);
+    await git("add", ".");
+    await git("git commit", "-m", originalTitle);
   } catch (error) {
     await git("cherry-pick", "--abort");
     throw error;
@@ -238,6 +242,7 @@ const backport = async ({
           commitToBackport,
           github,
           head,
+          originalTitle,
           owner,
           repo,
           title,
