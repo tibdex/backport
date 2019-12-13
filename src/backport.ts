@@ -180,6 +180,7 @@ const backport = async ({
   payload: WebhookPayloadPullRequest;
   token: string;
 }) => {
+
   if (!merged) {
     return;
   }
