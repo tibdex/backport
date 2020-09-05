@@ -2,6 +2,7 @@ import { error as logError, group, warning, info } from "@actions/core";
 import { exec } from "@actions/exec";
 import { GitHub } from "@actions/github";
 import { WebhookPayloadPullRequest } from "@octokit/webhooks";
+import escapeRegExp from "lodash.escaperegexp";
 
 const labelRegExp = /^backport ([^ ]+)(?: ([^ ]+))?$/;
 
@@ -183,10 +184,12 @@ const backport = async ({
       owner: { login: owner },
     },
   },
+  titleTemplate,
   token,
 }: {
   labelsToAdd: string[];
   payload: WebhookPayloadPullRequest;
+  titleTemplate: string;
   token: string;
 }) => {
   if (!merged) {
@@ -226,7 +229,15 @@ const backport = async ({
 
   for (const [base, head] of Object.entries(backportBaseToHead)) {
     const body = `Backport ${commitToBackport} from #${pullRequestNumber}`;
-    const title = `[Backport ${base}] ${originalTitle}`;
+    const titleVariables = {
+      base,
+      originalTitle,
+    };
+    const title = Object.entries(titleVariables).reduce(
+      (variable, [name, value]) =>
+        variable.replace(new RegExp(escapeRegExp(`{{${name}}}`), "g"), value),
+      titleTemplate,
+    );
     await group(`Backporting to ${base} on ${head}`, async () => {
       try {
         await backportOnce({
