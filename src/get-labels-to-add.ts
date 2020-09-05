@@ -8,5 +8,5 @@ export const getLabelsToAdd = (input: string | undefined): string[] => {
   }
 
   const labels = input.split(",");
-  return labels.map(v => v.trim()).filter(v => v !== "");
+  return labels.map((v) => v.trim()).filter((v) => v !== "");
 };
