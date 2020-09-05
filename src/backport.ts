@@ -229,13 +229,13 @@ const backport = async ({
 
   for (const [base, head] of Object.entries(backportBaseToHead)) {
     const body = `Backport ${commitToBackport} from #${pullRequestNumber}`;
-    const titleVars = {
+    const titleVariables = {
       base,
       originalTitle,
     };
-    const title = Object.entries(titleVars).reduce(
-      (t: string, [key, value]) =>
-        t.replace(new RegExp(escapeRegExp(`{{${key}}}`), "g"), value),
+    const title = Object.entries(titleVariables).reduce(
+      (variable, [name, value]) =>
+        variable.replace(new RegExp(escapeRegExp(`{{${name}}}`), "g"), value),
       titleTemplate,
     );
     await group(`Backporting to ${base} on ${head}`, async () => {
