@@ -264,7 +264,7 @@ const backport = async ({
         });
       } catch (error) {
         const errorMessage: string = error.message;
-        logError(`Backport failed: ${errorMessage}`);
+        logError(error);
         await github.issues.createComment({
           body: getFailedBackportCommentBody({
             base,

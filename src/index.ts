@@ -1,4 +1,4 @@
-import { debug, getInput, setFailed } from "@actions/core";
+import { debug, error as logError, getInput, setFailed } from "@actions/core";
 import { context } from "@actions/github";
 import { EventPayloads } from "@octokit/webhooks";
 
@@ -19,6 +19,7 @@ const run = async () => {
       token,
     });
   } catch (error) {
+    logError(error);
     setFailed(error.message);
   }
 };
