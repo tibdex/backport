@@ -1,7 +1,8 @@
 import { error as logError, group, warning, info } from "@actions/core";
 import { exec } from "@actions/exec";
-import { GitHub } from "@actions/github";
-import { WebhookPayloadPullRequest } from "@octokit/webhooks";
+import { getOctokit } from "@actions/github";
+import { GitHub } from "@actions/github/lib/utils";
+import { EventPayloads } from "@octokit/webhooks";
 import escapeRegExp from "lodash.escaperegexp";
 
 const labelRegExp = /^backport ([^ ]+)(?: ([^ ]+))?$/;
@@ -11,9 +12,9 @@ const getLabelNames = ({
   label,
   labels,
 }: {
-  action: WebhookPayloadPullRequest["action"];
+  action: EventPayloads.WebhookPayloadPullRequest["action"];
   label: { name: string };
-  labels: WebhookPayloadPullRequest["pull_request"]["labels"];
+  labels: EventPayloads.WebhookPayloadPullRequest["pull_request"]["labels"];
 }): string[] => {
   switch (action) {
     case "closed":
@@ -31,27 +32,35 @@ const getBackportBaseToHead = ({
   labels,
   pullRequestNumber,
 }: {
-  action: WebhookPayloadPullRequest["action"];
+  action: EventPayloads.WebhookPayloadPullRequest["action"];
   label: { name: string };
-  labels: WebhookPayloadPullRequest["pull_request"]["labels"];
+  labels: EventPayloads.WebhookPayloadPullRequest["pull_request"]["labels"];
   pullRequestNumber: number;
-}): { [base: string]: string } =>
-  getLabelNames({ action, label, labels }).reduce((baseToHead, labelName) => {
-    const matches = labelRegExp.exec(labelName);
-    if (matches === null) {
-      return baseToHead;
-    }
+}): { [base: string]: string } => {
+  const baseToHead: { [base: string]: string } = {};
 
-    const [, base, head = `backport-${pullRequestNumber}-to-${base}`] = matches;
-    return { ...baseToHead, [base]: head };
-  }, {});
+  getLabelNames({ action, label, labels }).forEach((labelName) => {
+    const matches = labelRegExp.exec(labelName);
+
+    if (matches !== null) {
+      const [
+        ,
+        base,
+        head = `backport-${pullRequestNumber}-to-${base}`,
+      ] = matches;
+      baseToHead[base] = head;
+    }
+  });
+
+  return baseToHead;
+};
 
 const warnIfSquashIsNotTheOnlyAllowedMergeMethod = async ({
   github,
   owner,
   repo,
 }: {
-  github: GitHub;
+  github: InstanceType<typeof GitHub>;
   owner: string;
   repo: string;
 }) => {
@@ -84,7 +93,7 @@ const backportOnce = async ({
   base: string;
   body: string;
   commitToBackport: string;
-  github: GitHub;
+  github: InstanceType<typeof GitHub>;
   head: string;
   labelsToAdd: string[];
   owner: string;
@@ -153,7 +162,7 @@ const getFailedBackportCommentBody = ({
     "# Create a new branch",
     `git switch --create ${head}`,
     "# Cherry-pick the merged commit of this pull request and resolve the conflicts",
-    `git cherry-pick ${commitToBackport}`,
+    `git cherry-pick ---mainline 1 ${commitToBackport}`,
     "# Push it to GitHub",
     `git push --set-upstream origin ${head}`,
     "# Go back to the original working tree",
@@ -169,8 +178,6 @@ const backport = async ({
   labelsToAdd,
   payload: {
     action,
-    // The payload has a label property when the action is "labeled".
-    // @ts-ignore
     label,
     pull_request: {
       labels,
@@ -188,7 +195,7 @@ const backport = async ({
   token,
 }: {
   labelsToAdd: string[];
-  payload: WebhookPayloadPullRequest;
+  payload: EventPayloads.WebhookPayloadPullRequest;
   titleTemplate: string;
   token: string;
 }) => {
@@ -198,7 +205,8 @@ const backport = async ({
 
   const backportBaseToHead = getBackportBaseToHead({
     action,
-    label,
+    // The payload has a label property when the action is "labeled".
+    label: label!,
     labels,
     pullRequestNumber,
   });
@@ -207,7 +215,7 @@ const backport = async ({
     return;
   }
 
-  const github = new GitHub(token);
+  const github = getOctokit(token);
 
   await warnIfSquashIsNotTheOnlyAllowedMergeMethod({ github, owner, repo });
 
@@ -229,15 +237,18 @@ const backport = async ({
 
   for (const [base, head] of Object.entries(backportBaseToHead)) {
     const body = `Backport ${commitToBackport} from #${pullRequestNumber}`;
-    const titleVariables = {
+
+    let title = titleTemplate;
+    Object.entries({
       base,
       originalTitle,
-    };
-    const title = Object.entries(titleVariables).reduce(
-      (variable, [name, value]) =>
-        variable.replace(new RegExp(escapeRegExp(`{{${name}}}`), "g"), value),
-      titleTemplate,
-    );
+    }).forEach(([name, value]) => {
+      title = title.replace(
+        new RegExp(escapeRegExp(`{{${name}}}`), "g"),
+        value,
+      );
+    });
+
     await group(`Backporting to ${base} on ${head}`, async () => {
       try {
         await backportOnce({
@@ -252,8 +263,8 @@ const backport = async ({
           title,
         });
       } catch (error) {
-        const errorMessage = error.message;
-        logError(`Backport failed: ${errorMessage}`);
+        const errorMessage: string = error.message;
+        logError(error);
         await github.issues.createComment({
           body: getFailedBackportCommentBody({
             base,
