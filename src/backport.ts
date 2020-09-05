@@ -104,7 +104,9 @@ const backportOnce = async ({
   }
 
   await git("push", "--set-upstream", "origin", head);
-  const { data: pr } = await github.pulls.create({
+  const {
+    data: { number: pullRequestNumber },
+  } = await github.pulls.create({
     base,
     body,
     head,
@@ -112,12 +114,14 @@ const backportOnce = async ({
     repo,
     title,
   });
-  await github.issues.addLabels({
-    issue_number: pr.number,
-    labels: labelsToAdd,
-    owner,
-    repo,
-  });
+  if (labelsToAdd.length > 0) {
+    await github.issues.addLabels({
+      issue_number: pullRequestNumber,
+      labels: labelsToAdd,
+      owner,
+      repo,
+    });
+  }
 };
 
 const getFailedBackportCommentBody = ({
