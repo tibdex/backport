@@ -76,6 +76,7 @@ const backportOnce = async ({
   commitToBackport,
   github,
   head,
+  labelsToAdd,
   owner,
   repo,
   title,
@@ -85,6 +86,7 @@ const backportOnce = async ({
   commitToBackport: string;
   github: GitHub;
   head: string;
+  labelsToAdd: string[];
   owner: string;
   repo: string;
   title: string;
@@ -103,7 +105,9 @@ const backportOnce = async ({
   }
 
   await git("push", "--set-upstream", "origin", head);
-  await github.pulls.create({
+  const {
+    data: { number: pullRequestNumber },
+  } = await github.pulls.create({
     base,
     body,
     head,
@@ -111,6 +115,14 @@ const backportOnce = async ({
     repo,
     title,
   });
+  if (labelsToAdd.length > 0) {
+    await github.issues.addLabels({
+      issue_number: pullRequestNumber,
+      labels: labelsToAdd,
+      owner,
+      repo,
+    });
+  }
 };
 
 const getFailedBackportCommentBody = ({
@@ -154,6 +166,7 @@ const getFailedBackportCommentBody = ({
 };
 
 const backport = async ({
+  labelsToAdd,
   payload: {
     action,
     // The payload has a label property when the action is "labeled".
@@ -174,6 +187,7 @@ const backport = async ({
   titleTemplate,
   token,
 }: {
+  labelsToAdd: string[];
   payload: WebhookPayloadPullRequest;
   titleTemplate: string;
   token: string;
@@ -232,6 +246,7 @@ const backport = async ({
           commitToBackport,
           github,
           head,
+          labelsToAdd,
           owner,
           repo,
           title,

@@ -2,11 +2,14 @@ name: Backporting
 author: Thibault Derousseaux <tibdex@gmail.com>
 description: Automatically backport PRs to other branches by simply labeling them.
 inputs:
+  add_labels:
+    description: Comma separated list of labels to add to the backport PR.
+    required: false
   github_token:
     description: Token for the GitHub API.
     required: true
   title_template:
-    description: A template for the title of the PR.
+    description: Template for the title of the backport PR.
     required: false
     default: "[Backport {{base}}] {{originalTitle}}"
 runs:
