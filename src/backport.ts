@@ -162,7 +162,7 @@ const getFailedBackportCommentBody = ({
     "# Create a new branch",
     `git switch --create ${head}`,
     "# Cherry-pick the merged commit of this pull request and resolve the conflicts",
-    `git cherry-pick ---mainline 1 ${commitToBackport}`,
+    `git cherry-pick --mainline 1 ${commitToBackport}`,
     "# Push it to GitHub",
     `git push --set-upstream origin ${head}`,
     "# Go back to the original working tree",
