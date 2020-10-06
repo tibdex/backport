@@ -8,12 +8,14 @@ import { getLabelsToAdd } from "./get-labels-to-add";
 const run = async () => {
   try {
     const token = getInput("github_token", { required: true });
+    const messageTemplate = getInput("message_template");
     const titleTemplate = getInput("title_template");
     debug(JSON.stringify(context, undefined, 2));
     const labelsInput = getInput("labels");
     const labelsToAdd = getLabelsToAdd(labelsInput);
     await backport({
       labelsToAdd,
+      messageTemplate,
       payload: context.payload as EventPayloads.WebhookPayloadPullRequest,
       titleTemplate,
       token,

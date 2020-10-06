@@ -176,6 +176,7 @@ const getFailedBackportCommentBody = ({
 
 const backport = async ({
   labelsToAdd,
+  messageTemplate,
   payload: {
     action,
     label,
@@ -195,6 +196,7 @@ const backport = async ({
   token,
 }: {
   labelsToAdd: string[];
+  messageTemplate: string;
   payload: EventPayloads.WebhookPayloadPullRequest;
   titleTemplate: string;
   token: string;
@@ -236,8 +238,6 @@ const backport = async ({
   await exec("git", ["config", "--global", "user.name", "github-actions[bot]"]);
 
   for (const [base, head] of Object.entries(backportBaseToHead)) {
-    const body = `Backport ${commitToBackport} from #${pullRequestNumber}`;
-
     let title = titleTemplate;
     Object.entries({
       base,
@@ -247,6 +247,36 @@ const backport = async ({
         new RegExp(escapeRegExp(`{{${name}}}`), "g"),
         value,
       );
+    });
+
+    let messageDirectives = Object.entries({
+      base,
+      commitToBackport,
+      originalTitle,
+      pullRequestNumber: pullRequestNumber.toString(),
+    });
+    if (messageTemplate.includes("originalMessage")) {
+      const {
+        data: { message: originalBody },
+      } = await github.git.getCommit({
+        commit_sha: commitToBackport,
+        owner,
+        repo,
+      });
+      // Strip the title from the commit message.
+      const originalMessage = originalBody.slice(
+        originalBody.indexOf("\n") + 1,
+      );
+      messageDirectives = messageDirectives.concat(
+        Object.entries({
+          originalMessage,
+        }),
+      );
+    }
+
+    let body = messageTemplate;
+    messageDirectives.forEach(([name, value]) => {
+      body = body.replace(new RegExp(escapeRegExp(`{{${name}}}`), "g"), value);
     });
 
     await group(`Backporting to ${base} on ${head}`, async () => {

@@ -12,6 +12,18 @@ inputs:
     description: Template for the title of the backport PR.
     required: false
     default: "[Backport {{base}}] {{originalTitle}}"
+  message_template:
+    description: |
+      Template for the message of the backport pull request.
+      Supported directives are:
+        - {{base}}: the base branch to which the PR is backported.
+        - {{originalTitle}}: the title of the original pull request
+        - {{originalMessage}}: the commit message of the original pull request
+          merge commit without the first line.
+        - {{pullRequestNumber}}: the original pull request number.
+        - {{commitToBackport}}: the SHA of the original pull request merge commit.
+    required: false
+    default: "Backport {{commitToBackport}} from #{{pullRequestNumber}}"
 runs:
   using: node12
   main: dist/index.js
