@@ -3,7 +3,7 @@ import { exec } from "@actions/exec";
 import { getOctokit } from "@actions/github";
 import { GitHub } from "@actions/github/lib/utils";
 import { EventPayloads } from "@octokit/webhooks";
-import escapeRegExp from "lodash.escaperegexp";
+import escapeRegExp from "lodash/escapeRegExp";
 
 const labelRegExp = /^backport ([^ ]+)(?: ([^ ]+))?$/;
 
@@ -36,8 +36,8 @@ const getBackportBaseToHead = ({
   label: { name: string };
   labels: EventPayloads.WebhookPayloadPullRequest["pull_request"]["labels"];
   pullRequestNumber: number;
-}): { [base: string]: string } => {
-  const baseToHead: { [base: string]: string } = {};
+}): Record<string, string> => {
+  const baseToHead: Record<string, string> = {};
 
   getLabelNames({ action, label, labels }).forEach((labelName) => {
     const matches = labelRegExp.exec(labelName);
@@ -108,7 +108,7 @@ const backportOnce = async ({
   await git("switch", "--create", head);
   try {
     await git("cherry-pick", commitToBackport);
-  } catch (error) {
+  } catch (error: unknown) {
     await git("cherry-pick", "--abort");
     throw error;
   }
@@ -249,6 +249,8 @@ const backport = async ({
       );
     });
 
+    // Safe to do here since all variables are const.
+    // eslint-disable-next-line @typescript-eslint/no-loop-func
     await group(`Backporting to ${base} on ${head}`, async () => {
       try {
         await backportOnce({
@@ -262,14 +264,19 @@ const backport = async ({
           repo,
           title,
         });
-      } catch (error) {
-        const errorMessage: string = error.message;
+      } catch (error: unknown) {
+        if (!(error instanceof Error)) {
+          throw new TypeError(
+            `Caught error of unexpected type: ${typeof error}`,
+          );
+        }
+
         logError(error);
         await github.issues.createComment({
           body: getFailedBackportCommentBody({
             base,
             commitToBackport,
-            errorMessage,
+            errorMessage: error.message,
             head,
           }),
           issue_number: pullRequestNumber,
