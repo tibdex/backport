@@ -2,7 +2,7 @@
  * Get an array of labels to be added to the PR.
  * Filtering out empty strings.
  */
-export const getLabelsToAdd = (input: string | undefined): string[] => {
+const getLabelsToAdd = (input: string | undefined): string[] => {
   if (input === undefined || input === "") {
     return [];
   }
@@ -10,3 +10,5 @@ export const getLabelsToAdd = (input: string | undefined): string[] => {
   const labels = input.split(",");
   return labels.map((v) => v.trim()).filter((v) => v !== "");
 };
+
+export { getLabelsToAdd };
