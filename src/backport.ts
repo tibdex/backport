@@ -249,8 +249,6 @@ const backport = async ({
       );
     });
 
-    // Safe to do here since all variables are const.
-    // eslint-disable-next-line @typescript-eslint/no-loop-func
     await group(`Backporting to ${base} on ${head}`, async () => {
       try {
         await backportOnce({
