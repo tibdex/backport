@@ -10,7 +10,7 @@ const run = async () => {
     const token = getInput("github_token", { required: true });
     const titleTemplate = getInput("title_template");
     debug(JSON.stringify(context, undefined, 2));
-    const labelsInput = getInput("labels");
+    const labelsInput = getInput("add_labels");
     const labelsToAdd = getLabelsToAdd(labelsInput);
     await backport({
       labelsToAdd,
