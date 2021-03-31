@@ -5,7 +5,7 @@ import { GitHub } from "@actions/github/lib/utils";
 import { EventPayloads } from "@octokit/webhooks";
 import escapeRegExp from "lodash/escapeRegExp";
 
-const labelRegExp = /^backport ([^ ]+)(?: ([^ ]+))?$/;
+const labelRegExp = /^Hotfix$/;
 
 const getLabelNames = ({
   action,
@@ -28,11 +28,13 @@ const getLabelNames = ({
 
 const getBackportBaseToHead = ({
   action,
+  branches,
   label,
   labels,
   pullRequestNumber,
 }: {
   action: EventPayloads.WebhookPayloadPullRequest["action"];
+  branches: string[];
   label: { name: string };
   labels: EventPayloads.WebhookPayloadPullRequest["pull_request"]["labels"];
   pullRequestNumber: number;
@@ -43,12 +45,9 @@ const getBackportBaseToHead = ({
     const matches = labelRegExp.exec(labelName);
 
     if (matches !== null) {
-      const [
-        ,
-        base,
-        head = `backport-${pullRequestNumber}-to-${base}`,
-      ] = matches;
-      baseToHead[base] = head;
+      branches.forEach((base) => {
+        baseToHead[base] = `backport-${pullRequestNumber}-to-${base}`;
+      });
     }
   });
 
@@ -175,6 +174,7 @@ const getFailedBackportCommentBody = ({
 };
 
 const backport = async ({
+  branches,
   labelsToAdd,
   payload: {
     action,
@@ -194,6 +194,7 @@ const backport = async ({
   titleTemplate,
   token,
 }: {
+  branches: string[];
   labelsToAdd: string[];
   payload: EventPayloads.WebhookPayloadPullRequest;
   titleTemplate: string;
@@ -205,6 +206,7 @@ const backport = async ({
 
   const backportBaseToHead = getBackportBaseToHead({
     action,
+    branches,
     // The payload has a label property when the action is "labeled".
     label: label!,
     labels,

@@ -1,10 +1,14 @@
-name: Backporting
-author: Thibault Derousseaux <tibdex@gmail.com>
-description: Automatically backport PRs to other branches by simply labeling them.
+name: Hotfix Bot
+author: Judson Stephenson <jud@jud.me>
+description: Automatically backport Hotfix PRs to other branches.
 inputs:
   add_labels:
     description: Comma separated list of labels to add to the backport PR.
     required: false
+  branches:
+    description: Comma separated list of branches to open backport PRs against.
+    required: false
+    default: develop,staging
   github_token:
     description: Token for the GitHub API.
     required: true
