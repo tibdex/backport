@@ -82,6 +82,7 @@ const warnIfSquashIsNotTheOnlyAllowedMergeMethod = async ({
 const backportOnce = async ({
   base,
   body,
+  commits,
   commitToBackport,
   github,
   head,
@@ -92,6 +93,7 @@ const backportOnce = async ({
 }: {
   base: string;
   body: string;
+  commits: string[];
   commitToBackport: string;
   github: InstanceType<typeof GitHub>;
   head: string;
@@ -107,6 +109,7 @@ const backportOnce = async ({
   let backportError = null;
   await git("switch", base);
   await git("switch", "--create", head);
+
   try {
     await git("show", commitToBackport + "^2");
     // We have a merge commit
@@ -119,7 +122,7 @@ const backportOnce = async ({
   } catch (error: unknown) {
     // No merge commit
     try {
-      await git("cherry-pick", commitToBackport);
+      await git("cherry-pick", ...commits);
     } catch (error: unknown) {
       await git("cherry-pick", "--abort");
       backportError = error;
@@ -153,12 +156,12 @@ const backportOnce = async ({
 
 const getFailedBackportCommentBody = ({
   base,
-  commitToBackport,
+  commits,
   errorMessage,
   head,
 }: {
   base: string;
-  commitToBackport: string;
+  commits: string[];
   errorMessage: string;
   head: string;
 }) => {
@@ -179,7 +182,7 @@ const getFailedBackportCommentBody = ({
     "# Create a new branch",
     `git switch --create ${head}`,
     "# Cherry-pick the merged commit of this pull request and resolve the conflicts",
-    `git cherry-pick --mainline 1 ${commitToBackport}`,
+    `git cherry-pick ${commits}`,
     "# Push it to GitHub",
     `git push --set-upstream origin ${head}`,
     "# Go back to the original working tree",
@@ -237,9 +240,21 @@ const backport = async ({
 
   await warnIfSquashIsNotTheOnlyAllowedMergeMethod({ github, owner, repo });
 
-  // The merge commit SHA is actually not null.
+  const commitsResponse = await github.request(
+    "GET /repos/{owner}/{repo}/pulls/{pull_number}/commits",
+    {
+      owner: owner,
+      repo: repo,
+      pull_number: pullRequestNumber,
+    },
+  );
+
+  // The commit range (interesting for rebase merges)
+  const commits = commitsResponse.data.map(({ commit }) => commit.tree.sha);
+
+  // The merge commit itself (only interesting if it's a merge)
   const commitToBackport = String(mergeCommitSha);
-  info(`Backporting ${commitToBackport} from #${pullRequestNumber}`);
+  info(`Backporting #${pullRequestNumber}`);
 
   await exec("git", [
     "clone",
@@ -254,7 +269,7 @@ const backport = async ({
   await exec("git", ["config", "--global", "user.name", "github-actions[bot]"]);
 
   for (const [base, head] of Object.entries(backportBaseToHead)) {
-    const body = `Backport ${commitToBackport} from #${pullRequestNumber}\n **Authored by:** @${pullRequestUser}`;
+    const body = `Backport #${pullRequestNumber}\n **Authored by:** @${pullRequestUser}`;
 
     let title = titleTemplate;
     Object.entries({
@@ -272,6 +287,7 @@ const backport = async ({
         await backportOnce({
           base,
           body,
+          commits,
           commitToBackport,
           github,
           head,
@@ -291,7 +307,7 @@ const backport = async ({
         await github.issues.createComment({
           body: getFailedBackportCommentBody({
             base,
-            commitToBackport,
+            commits,
             errorMessage: error.message,
             head,
           }),
