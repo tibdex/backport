@@ -104,13 +104,30 @@ const backportOnce = async ({
     await exec("git", args, { cwd: repo });
   };
 
+  let backportError = null;
   await git("switch", base);
   await git("switch", "--create", head);
   try {
-    await git("cherry-pick", "--mainline", "1", commitToBackport);
+    await git("show", commitToBackport + "^2");
+    // We have a merge commit
+    try {
+      await git("cherry-pick", `${commitToBackport}^..${commitToBackport}`);
+    } catch (error: unknown) {
+      await git("cherry-pick", "--abort");
+      backportError = error;
+    }
   } catch (error: unknown) {
-    await git("cherry-pick", "--abort");
-    throw error;
+    // No merge commit
+    try {
+      await git("cherry-pick", commitToBackport);
+    } catch (error: unknown) {
+      await git("cherry-pick", "--abort");
+      backportError = error;
+    }
+  }
+
+  if (backportError) {
+    throw backportError;
   }
 
   await git("push", "--set-upstream", "origin", head);
@@ -190,9 +207,7 @@ const backport = async ({
       name: repo,
       owner: { login: owner },
     },
-    sender: {
-      login
-    }
+    sender: { login },
   },
   titleTemplate,
   token,
