@@ -190,6 +190,9 @@ const backport = async ({
       name: repo,
       owner: { login: owner },
     },
+    sender: {
+      login
+    }
   },
   titleTemplate,
   token,
@@ -236,7 +239,7 @@ const backport = async ({
   await exec("git", ["config", "--global", "user.name", "github-actions[bot]"]);
 
   for (const [base, head] of Object.entries(backportBaseToHead)) {
-    const body = `Backport ${commitToBackport} from #${pullRequestNumber}`;
+    const body = `Backport ${commitToBackport} from #${pullRequestNumber} by @${login}`;
 
     let title = titleTemplate;
     Object.entries({
