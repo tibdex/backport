@@ -111,7 +111,7 @@ const backportOnce = async ({
     await git("show", commitToBackport + "^2");
     // We have a merge commit
     try {
-      await git("cherry-pick", `${commitToBackport}^..${commitToBackport}`);
+      await git("cherry-pick", `${commitToBackport}^..${commitToBackport}^2`);
     } catch (error: unknown) {
       await git("cherry-pick", "--abort");
       backportError = error;
