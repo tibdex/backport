@@ -254,7 +254,7 @@ const backport = async ({
   await exec("git", ["config", "--global", "user.name", "github-actions[bot]"]);
 
   for (const [base, head] of Object.entries(backportBaseToHead)) {
-    const body = `Backport ${commitToBackport} from #${pullRequestNumber}\n **Responsible:** @${pullRequestUser}`;
+    const body = `Backport ${commitToBackport} from #${pullRequestNumber}\n **Authored by:** @${pullRequestUser}`;
 
     let title = titleTemplate;
     Object.entries({
