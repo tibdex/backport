@@ -250,7 +250,7 @@ const backport = async ({
   );
 
   // The commit range (interesting for rebase merges)
-  const commits = commitsResponse.data.map(({ commit }) => commit.tree.sha);
+  const commits = commitsResponse.data.map(({ sha }) => sha);
 
   // The merge commit itself (only interesting if it's a merge)
   const commitToBackport = String(mergeCommitSha);
