@@ -1,4 +1,4 @@
-name: Backport
+name: Hotfix
 on:
   pull_request:
     types:
@@ -8,9 +8,10 @@ on:
 jobs:
   backport:
     runs-on: ubuntu-18.04
-    name: Backport
+    name: Hotfix
     steps:
-      - name: Backport
-        uses: tibdex/backport@v1
+      - name: Hotfix
+        uses: jud/hotfix@v1
         with:
+          branches: develop,staging
           github_token: ${{ secrets.GITHUB_TOKEN }}
