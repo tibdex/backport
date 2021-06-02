@@ -66,6 +66,7 @@ const backportOnce = async ({
   owner,
   repo,
   title,
+  pullRequestNumber
 }: {
   base: string;
   body: string;
@@ -77,12 +78,14 @@ const backportOnce = async ({
   owner: string;
   repo: string;
   title: string;
+  pullRequestNumber: number;
 }) => {
   const git = async (...args: string[]) => {
     await exec("git", args, { cwd: repo });
   };
 
   let backportError = null;
+  await git("fetch", "origin", `pull/${pullRequestNumber}/head`);
   await git("switch", base);
   await git("switch", "--create", head);
 
@@ -111,7 +114,7 @@ const backportOnce = async ({
 
   await git("push", "--set-upstream", "origin", head);
   const {
-    data: { number: pullRequestNumber },
+    data: { number: backportPullRequestNumber },
   } = await github.pulls.create({
     base,
     body,
@@ -122,7 +125,7 @@ const backportOnce = async ({
   });
   if (labelsToAdd.length > 0) {
     await github.issues.addLabels({
-      issue_number: pullRequestNumber,
+      issue_number: backportPullRequestNumber,
       labels: labelsToAdd,
       owner,
       repo,
@@ -269,6 +272,7 @@ const backport = async ({
           owner,
           repo,
           title,
+          pullRequestNumber
         });
       } catch (error: unknown) {
         if (!(error instanceof Error)) {
