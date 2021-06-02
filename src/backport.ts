@@ -55,30 +55,6 @@ const getBackportBaseToHead = ({
   return baseToHead;
 };
 
-const warnIfSquashIsNotTheOnlyAllowedMergeMethod = async ({
-  github,
-  owner,
-  repo,
-}: {
-  github: InstanceType<typeof GitHub>;
-  owner: string;
-  repo: string;
-}) => {
-  const {
-    data: { allow_merge_commit, allow_rebase_merge },
-  } = await github.repos.get({ owner, repo });
-  if (allow_merge_commit || allow_rebase_merge) {
-    warning(
-      [
-        "Your repository allows merge commits and rebase merging.",
-        " However, Backport only supports rebased and merged pull requests with a single commit and squashed and merged pull requests.",
-        " Consider only allowing squash merging.",
-        " See https://help.github.com/en/github/administering-a-repository/about-merge-methods-on-github for more information.",
-      ].join("\n"),
-    );
-  }
-};
-
 const backportOnce = async ({
   base,
   body,
@@ -237,8 +213,6 @@ const backport = async ({
   }
 
   const github = getOctokit(token);
-
-  await warnIfSquashIsNotTheOnlyAllowedMergeMethod({ github, owner, repo });
 
   const commitsResponse = await github.request(
     "GET /repos/{owner}/{repo}/pulls/{pull_number}/commits",
