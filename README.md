@@ -6,8 +6,11 @@ It thus integrates well with [Autosquash](https://github.com/marketplace/actions
 # Usage
 
 1.  :electric_plug: Add this [.github/workflows/backport.yml](.github/workflows/backport.yml) to your repository.
+
 2.  :speech_balloon: Let's say you want to backport a pull request on a branch named `production`.
+    
     Then label it with `backport production`. (See [how to create labels](https://help.github.com/articles/creating-a-label/).)
+
 3.  :sparkles: That's it! When the pull request gets merged, it will be backported to the `production` branch.
     If the pull request cannot be backported, a comment explaining why will automatically be posted.
 
