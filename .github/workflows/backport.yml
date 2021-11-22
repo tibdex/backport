@@ -9,6 +9,7 @@ jobs:
   backport:
     runs-on: ubuntu-18.04
     name: Backport
+    if: github.event.pull_request.merged
     steps:
       - name: Backport
         uses: tibdex/backport@v1
