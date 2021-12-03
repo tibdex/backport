@@ -12,7 +12,9 @@ const run = async () => {
     debug(JSON.stringify(context, undefined, 2));
     const labelsInput = getInput("add_labels");
     const labelsToAdd = getLabelsToAdd(labelsInput);
+    const copyOriginalLabels = getInput("copy_original_labels") !== "";
     await backport({
+      copyOriginalLabels,
       labelsToAdd,
       payload: context.payload as EventPayloads.WebhookPayloadPullRequest,
       titleTemplate,

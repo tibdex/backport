@@ -12,6 +12,10 @@ inputs:
     description: Template for the title of the backport PR.
     required: false
     default: "[Backport {{base}}] {{originalTitle}}"
+  copy_original_labels:
+    description: Copy labels (minus the backport label) to the backport PR
+    required: false
+    default: ""
 runs:
   using: node12
   main: dist/index.js

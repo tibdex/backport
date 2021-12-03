@@ -174,7 +174,18 @@ const getFailedBackportCommentBody = ({
   ].join("\n");
 };
 
+const getOriginalLabels = (
+  labels: EventPayloads.WebhookPayloadPullRequestLabel[],
+): string[] => {
+  const filteredLables = labels.filter(
+    (label) => !labelRegExp.exec(label.name),
+  );
+
+  return filteredLables.map((label) => label.name);
+};
+
 const backport = async ({
+  copyOriginalLabels,
   labelsToAdd,
   payload: {
     action,
@@ -194,6 +205,7 @@ const backport = async ({
   titleTemplate,
   token,
 }: {
+  copyOriginalLabels: boolean;
   labelsToAdd: string[];
   payload: EventPayloads.WebhookPayloadPullRequest;
   titleTemplate: string;
@@ -213,6 +225,10 @@ const backport = async ({
 
   if (Object.keys(backportBaseToHead).length === 0) {
     return;
+  }
+
+  if (copyOriginalLabels) {
+    labelsToAdd = labelsToAdd.concat(getOriginalLabels(labels));
   }
 
   const github = getOctokit(token);
