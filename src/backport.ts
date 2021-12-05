@@ -199,7 +199,7 @@ const backport = async ({
   titleTemplate: string;
   token: string;
 }) => {
-  if (!merged) {
+  if (merged !== true) {
     return;
   }
 
