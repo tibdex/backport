@@ -5,6 +5,9 @@ inputs:
   add_labels:
     description: Comma separated list of labels to add to the backport PR.
     required: false
+  branch_name:
+    description: Custom branch name for the backport PR.
+    required: false
   github_token:
     description: Token for the GitHub API.
     required: true

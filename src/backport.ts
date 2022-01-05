@@ -31,11 +31,13 @@ const getBackportBaseToHead = ({
   label,
   labels,
   pullRequestNumber,
+  branchName,
 }: {
   action: EventPayloads.WebhookPayloadPullRequest["action"];
   label: { name: string };
   labels: EventPayloads.WebhookPayloadPullRequest["pull_request"]["labels"];
   pullRequestNumber: number;
+  branchName: string;
 }): Record<string, string> => {
   const baseToHead: Record<string, string> = {};
 
@@ -46,7 +48,7 @@ const getBackportBaseToHead = ({
       const [
         ,
         base,
-        head = `backport-${pullRequestNumber}-to-${base}`,
+        head = (branchName != null) ? `${branchName}-to-${base}` : `backport-${pullRequestNumber}-to-${base}`,
       ] = matches;
       baseToHead[base] = head;
     }
@@ -193,11 +195,13 @@ const backport = async ({
   },
   titleTemplate,
   token,
+  branchName,
 }: {
   labelsToAdd: string[];
   payload: EventPayloads.WebhookPayloadPullRequest;
   titleTemplate: string;
   token: string;
+  branchName: string;
 }) => {
   if (merged !== true) {
     return;
@@ -209,6 +213,7 @@ const backport = async ({
     label: label!,
     labels,
     pullRequestNumber,
+    branchName,
   });
 
   if (Object.keys(backportBaseToHead).length === 0) {
