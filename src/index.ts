@@ -14,11 +14,11 @@ const run = async () => {
     const labelsInput = getInput("add_labels");
     const labelsToAdd = getLabelsToAdd(labelsInput);
     await backport({
+      branchName,
       labelsToAdd,
       payload: context.payload as EventPayloads.WebhookPayloadPullRequest,
       titleTemplate,
       token,
-      branchName,
     });
   } catch (error: unknown) {
     if (typeof error !== "string" && !(error instanceof Error)) {
