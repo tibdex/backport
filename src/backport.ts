@@ -135,11 +135,13 @@ const backportOnce = async ({
 };
 
 const getFailedBackportCommentBody = ({
+  author,
   base,
   commitToBackport,
   errorMessage,
   head,
 }: {
+  author: string;
   base: string;
   commitToBackport: string;
   errorMessage: string;
@@ -147,11 +149,14 @@ const getFailedBackportCommentBody = ({
 }) => {
   const worktreePath = `.worktrees/backport-${base}`;
   return [
-    `The backport to \`${base}\` failed:`,
+    `${author ? `@${author} - ` : ""}The backport to \`${base}\` failed:`,
     "```",
     errorMessage,
     "```",
-    "To backport manually, run these commands in your terminal:",
+    "To backport manually, run one of these recommended approaches in your terminal:",
+    "\n",
+    "<details>",
+    " <summary>Resolve with `Worktrees`</summary>",
     "```bash",
     "# Fetch latest updates from GitHub",
     "git fetch",
@@ -170,7 +175,31 @@ const getFailedBackportCommentBody = ({
     "# Delete the working tree",
     `git worktree remove ${worktreePath}`,
     "```",
-    `Then, create a pull request where the \`base\` branch is \`${base}\` and the \`compare\`/\`head\` branch is \`${head}\`.`,
+    `Then, create a pull request where the \`base\` branch is \`${base}\` and the \`compare\`/\`head\` branch is \`${head}\`.,`,
+    "</details>",
+    "<details>",
+    " <summary>Resolve with `cherry-pick`</summary>",
+    `
+\`\`\`bash
+# fetch latest changes
+git fetch
+
+# checkout release branch
+git checkout ${base} 
+
+# create new branch off of ${base}
+git checkout -b manual-backport-to-${base}-from-${head}
+
+# cherry pick changes
+git cherry-pick ${commitToBackport}
+
+# push new branch
+git push origin manual-backport-to-${base}-from-${head} 
+\`\`\`
+
+Then, create a pull request where the \`base\` branch is \`${base}\` and the \`compare\`/\`head\` branch is \`manual-backport-to-${base}-from-${head}\`.,
+    `,
+    "</details>",
   ].join("\n");
 };
 
@@ -180,11 +209,13 @@ const backport = async ({
     action,
     label,
     pull_request: {
+      body: originalBody,
       labels,
       merge_commit_sha: mergeCommitSha,
       merged,
       number: pullRequestNumber,
       title: originalTitle,
+      user,
     },
     repository: {
       name: repo,
@@ -272,6 +303,7 @@ const backport = async ({
         logError(error);
         await github.issues.createComment({
           body: getFailedBackportCommentBody({
+            author: user.login ?? "",
             base,
             commitToBackport,
             errorMessage: error.message,
