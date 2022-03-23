@@ -303,7 +303,7 @@ const backport = async ({
         logError(error);
         await github.issues.createComment({
           body: getFailedBackportCommentBody({
-            author: user.login ?? "",
+            author: user.login || "",
             base,
             commitToBackport,
             errorMessage: error.message,
