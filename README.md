@@ -8,7 +8,7 @@ It thus integrates well with [Autosquash](https://github.com/marketplace/actions
 1.  :electric_plug: Add this [.github/workflows/backport.yml](.github/workflows/backport.yml) to your repository.
 
 2.  :speech_balloon: Let's say you want to backport a pull request on a branch named `production`.
-    
+
     Then label it with `backport production`. (See [how to create labels](https://help.github.com/articles/creating-a-label/).)
 
 3.  :sparkles: That's it! When the pull request gets merged, it will be backported to the `production` branch.
@@ -16,3 +16,13 @@ It thus integrates well with [Autosquash](https://github.com/marketplace/actions
 
 _Note:_ multiple backport labels can be added.
 For example, if a pull request has the labels `backport staging` and `backport production` it will be backported to both branches: `staging` and `production`.
+
+## Inputs
+
+- `github_token`: `string`- **required**
+
+- `title_template`: `string` - A custom title tempalte that will be used as the title for the Backport pull request
+
+- `reuse_pr_body`: `bool` - Allows Backport to copy the original pull request body contents and use them in the Backport pull request
+
+- `add_labels`: `string[]` - String array of `labels` to be added to the Backport pull request (e.g. `reviewed,ready-for-release,etc.` -> All of these will be added as labels to the new PR)

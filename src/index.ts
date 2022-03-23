@@ -9,12 +9,14 @@ const run = async () => {
   try {
     const token = getInput("github_token", { required: true });
     const titleTemplate = getInput("title_template");
-    debug(JSON.stringify(context, undefined, 2));
+    const reusePRBody = getInput("reuse_pr_body");
+
     const labelsInput = getInput("add_labels");
     const labelsToAdd = getLabelsToAdd(labelsInput);
     await backport({
       labelsToAdd,
       payload: context.payload as EventPayloads.WebhookPayloadPullRequest,
+      reusePRBody: Boolean(reusePRBody),
       titleTemplate,
       token,
     });

@@ -185,21 +185,24 @@ const backport = async ({
       merged,
       number: pullRequestNumber,
       title: originalTitle,
+      body: originalBody,
     },
     repository: {
       name: repo,
       owner: { login: owner },
     },
   },
+  reusePRBody,
   titleTemplate,
   token,
 }: {
   labelsToAdd: string[];
   payload: EventPayloads.WebhookPayloadPullRequest;
+  reusePRBody: boolean;
   titleTemplate: string;
   token: string;
 }) => {
-  if (merged !== true) {
+  if (!merged) {
     return;
   }
 
@@ -235,9 +238,10 @@ const backport = async ({
   ]);
   await exec("git", ["config", "--global", "user.name", "github-actions[bot]"]);
 
-  for (const [base, head] of Object.entries(backportBaseToHead)) {
-    const body = `Backport ${commitToBackport} from #${pullRequestNumber}`;
+  const backportBody = `Backport ${commitToBackport} from #${pullRequestNumber}`;
+  const reusedBody = `${originalBody} \n ${backportBody}`;
 
+  for (const [base, head] of Object.entries(backportBaseToHead)) {
     let title = titleTemplate;
     Object.entries({
       base,
@@ -253,7 +257,7 @@ const backport = async ({
       try {
         await backportOnce({
           base,
-          body,
+          body: reusePRBody ? reusedBody : backportBody,
           commitToBackport,
           github,
           head,
