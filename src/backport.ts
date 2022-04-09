@@ -1,58 +1,54 @@
-import { error as logError, group, warning, info } from "@actions/core";
+import { group, info, error as logError, warning } from "@actions/core";
 import { exec } from "@actions/exec";
 import { getOctokit } from "@actions/github";
-import { GitHub } from "@actions/github/lib/utils";
-import { EventPayloads } from "@octokit/webhooks";
-import escapeRegExp from "lodash/escapeRegExp";
+import type { GitHub } from "@actions/github/lib/utils.js";
+import type {
+  PullRequestClosedEvent,
+  PullRequestLabeledEvent,
+} from "@octokit/webhooks-types";
+import ensureError from "ensure-error";
+import { compact } from "lodash-es";
 
-const labelRegExp = /^backport ([^ ]+)(?: ([^ ]+))?$/;
+const getBaseBranchFromLabel = (
+  label: string,
+  labelRegExp: RegExp,
+): string | undefined => {
+  const result = labelRegExp.exec(label);
 
-const getLabelNames = ({
-  action,
-  label,
-  labels,
-}: {
-  action: EventPayloads.WebhookPayloadPullRequest["action"];
-  label: { name: string };
-  labels: EventPayloads.WebhookPayloadPullRequest["pull_request"]["labels"];
-}): string[] => {
-  switch (action) {
-    case "closed":
-      return labels.map(({ name }) => name);
-    case "labeled":
-      return [label.name];
-    default:
-      return [];
+  if (!result || !result.groups) {
+    return;
   }
+
+  const { base } = result.groups;
+
+  if (!base) {
+    throw new Error(
+      `RegExp "${String(
+        labelRegExp,
+      )}" matched "${label}" but missed a "base" named capturing group.`,
+    );
+  }
+
+  return base;
 };
 
-const getBackportBaseToHead = ({
-  action,
-  label,
-  labels,
-  pullRequestNumber,
-}: {
-  action: EventPayloads.WebhookPayloadPullRequest["action"];
-  label: { name: string };
-  labels: EventPayloads.WebhookPayloadPullRequest["pull_request"]["labels"];
-  pullRequestNumber: number;
-}): Record<string, string> => {
-  const baseToHead: Record<string, string> = {};
+const getBaseBranches = ({
+  labelRegExp,
+  payload,
+}: Readonly<{
+  labelRegExp: RegExp;
+  payload: PullRequestClosedEvent | PullRequestLabeledEvent;
+}>): string[] => {
+  if ("label" in payload) {
+    const base = getBaseBranchFromLabel(payload.label.name, labelRegExp);
+    return base ? [base] : [];
+  }
 
-  getLabelNames({ action, label, labels }).forEach((labelName) => {
-    const matches = labelRegExp.exec(labelName);
-
-    if (matches !== null) {
-      const [
-        ,
-        base,
-        head = `backport-${pullRequestNumber}-to-${base}`,
-      ] = matches;
-      baseToHead[base] = head;
-    }
-  });
-
-  return baseToHead;
+  return compact(
+    payload.pull_request.labels.map((label) =>
+      getBaseBranchFromLabel(label.name, labelRegExp),
+    ),
+  );
 };
 
 const warnIfSquashIsNotTheOnlyAllowedMergeMethod = async ({
@@ -66,7 +62,7 @@ const warnIfSquashIsNotTheOnlyAllowedMergeMethod = async ({
 }) => {
   const {
     data: { allow_merge_commit, allow_rebase_merge },
-  } = await github.repos.get({ owner, repo });
+  } = await github.request("GET /repos/{owner}/{repo}", { owner, repo });
   if (allow_merge_commit || allow_rebase_merge) {
     warning(
       [
@@ -82,24 +78,24 @@ const warnIfSquashIsNotTheOnlyAllowedMergeMethod = async ({
 const backportOnce = async ({
   base,
   body,
-  commitToBackport,
+  commitSha,
   github,
   head,
-  labelsToAdd,
+  labels,
   owner,
   repo,
   title,
-}: {
+}: Readonly<{
   base: string;
   body: string;
-  commitToBackport: string;
+  commitSha: string;
   github: InstanceType<typeof GitHub>;
   head: string;
-  labelsToAdd: string[];
+  labels: string[];
   owner: string;
   repo: string;
   title: string;
-}) => {
+}>) => {
   const git = async (...args: string[]) => {
     await exec("git", args, { cwd: repo });
   };
@@ -107,7 +103,7 @@ const backportOnce = async ({
   await git("switch", base);
   await git("switch", "--create", head);
   try {
-    await git("cherry-pick", "-x", commitToBackport);
+    await git("cherry-pick", "-x", commitSha);
   } catch (error: unknown) {
     await git("cherry-pick", "--abort");
     throw error;
@@ -115,8 +111,8 @@ const backportOnce = async ({
 
   await git("push", "--set-upstream", "origin", head);
   const {
-    data: { number: pullRequestNumber },
-  } = await github.pulls.create({
+    data: { number },
+  } = await github.request("POST /repos/{owner}/{repo}/pulls", {
     base,
     body,
     head,
@@ -124,24 +120,27 @@ const backportOnce = async ({
     repo,
     title,
   });
-  if (labelsToAdd.length > 0) {
-    await github.issues.addLabels({
-      issue_number: pullRequestNumber,
-      labels: labelsToAdd,
-      owner,
-      repo,
-    });
+  if (labels.length > 0) {
+    await github.request(
+      "PUT /repos/{owner}/{repo}/issues/{issue_number}/labels",
+      {
+        issue_number: number,
+        labels,
+        owner,
+        repo,
+      },
+    );
   }
 };
 
 const getFailedBackportCommentBody = ({
   base,
-  commitToBackport,
+  commitSha,
   errorMessage,
   head,
 }: {
   base: string;
-  commitToBackport: string;
+  commitSha: string;
   errorMessage: string;
   head: string;
 }) => {
@@ -162,7 +161,7 @@ const getFailedBackportCommentBody = ({
     "# Create a new branch",
     `git switch --create ${head}`,
     "# Cherry-pick the merged commit of this pull request and resolve the conflicts",
-    `git cherry-pick -x --mainline 1 ${commitToBackport}`,
+    `git cherry-pick -x --mainline 1 ${commitSha}`,
     "# Push it to GitHub",
     `git push --set-upstream origin ${head}`,
     "# Go back to the original working tree",
@@ -175,43 +174,70 @@ const getFailedBackportCommentBody = ({
 };
 
 const backport = async ({
-  labelsToAdd,
-  payload: {
-    action,
-    label,
+  getBody,
+  getHead,
+  getLabels,
+  getTitle,
+  labelRegExp,
+  payload,
+  token,
+}: {
+  getBody: (
+    props: Readonly<{
+      base: string;
+      body: string;
+      mergeCommitSha: string;
+      number: number;
+    }>,
+  ) => string;
+  getHead: (
+    props: Readonly<{
+      base: string;
+      number: number;
+    }>,
+  ) => string;
+  getLabels: (
+    props: Readonly<{
+      base: string;
+      labels: readonly string[];
+    }>,
+  ) => string[];
+  getTitle: (
+    props: Readonly<{
+      base: string;
+      number: number;
+      title: string;
+    }>,
+  ) => string;
+  labelRegExp: RegExp;
+  payload: PullRequestClosedEvent | PullRequestLabeledEvent;
+  token: string;
+}) => {
+  const {
     pull_request: {
-      labels,
+      body: originalBody,
+      labels: originalLabels,
       merge_commit_sha: mergeCommitSha,
       merged,
-      number: pullRequestNumber,
+      number,
       title: originalTitle,
     },
     repository: {
       name: repo,
       owner: { login: owner },
     },
-  },
-  titleTemplate,
-  token,
-}: {
-  labelsToAdd: string[];
-  payload: EventPayloads.WebhookPayloadPullRequest;
-  titleTemplate: string;
-  token: string;
-}) => {
-  if (merged !== true) {
-    return;
+  } = payload;
+
+  if (merged !== true || !mergeCommitSha) {
+    // See https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target.
+    throw new Error(
+      "For security reasons, this action should only run on merged PRs.",
+    );
   }
 
-  const backportBaseToHead = getBackportBaseToHead({
-    action,
-    // The payload has a label property when the action is "labeled".
-    label: label!,
-    labels,
-    pullRequestNumber,
-  });
+  const baseBranches = getBaseBranches({ labelRegExp, payload });
 
-  if (Object.keys(backportBaseToHead).length === 0) {
+  if (baseBranches.length === 0) {
     return;
   }
 
@@ -219,9 +245,7 @@ const backport = async ({
 
   await warnIfSquashIsNotTheOnlyAllowedMergeMethod({ github, owner, repo });
 
-  // The merge commit SHA is actually not null.
-  const commitToBackport = String(mergeCommitSha);
-  info(`Backporting ${commitToBackport} from #${pullRequestNumber}`);
+  info(`Backporting ${mergeCommitSha} from #${number}`);
 
   await exec("git", [
     "clone",
@@ -235,52 +259,53 @@ const backport = async ({
   ]);
   await exec("git", ["config", "--global", "user.name", "github-actions[bot]"]);
 
-  for (const [base, head] of Object.entries(backportBaseToHead)) {
-    const body = `Backport ${commitToBackport} from #${pullRequestNumber}`;
-
-    let title = titleTemplate;
-    Object.entries({
+  for (const base of baseBranches) {
+    const body = getBody({
       base,
-      originalTitle,
-    }).forEach(([name, value]) => {
-      title = title.replace(
-        new RegExp(escapeRegExp(`{{${name}}}`), "g"),
-        value,
-      );
+      body: originalBody ?? "",
+      mergeCommitSha,
+      number,
     });
+    const head = getHead({ base, number });
+    const labels = getLabels({
+      base,
+      labels: originalLabels.map(({ name }) => name),
+    });
+    const title = getTitle({ base, number, title: originalTitle });
 
+    // PRs are handled sequentially to avoid breaking GitHub's log grouping feature.
+    // eslint-disable-next-line no-await-in-loop
     await group(`Backporting to ${base} on ${head}`, async () => {
       try {
         await backportOnce({
           base,
           body,
-          commitToBackport,
+          commitSha: mergeCommitSha,
           github,
           head,
-          labelsToAdd,
+          labels,
           owner,
           repo,
           title,
         });
-      } catch (error: unknown) {
-        if (!(error instanceof Error)) {
-          throw new TypeError(
-            `Caught error of unexpected type: ${typeof error}`,
-          );
-        }
-
+      } catch (_error: unknown) {
+        const error = ensureError(_error);
         logError(error);
-        await github.issues.createComment({
-          body: getFailedBackportCommentBody({
-            base,
-            commitToBackport,
-            errorMessage: error.message,
-            head,
-          }),
-          issue_number: pullRequestNumber,
-          owner,
-          repo,
-        });
+
+        await github.request(
+          "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+          {
+            body: getFailedBackportCommentBody({
+              base,
+              commitSha: mergeCommitSha,
+              errorMessage: error.message,
+              head,
+            }),
+            issue_number: number,
+            owner,
+            repo,
+          },
+        );
       }
     });
   }
