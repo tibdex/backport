@@ -2,18 +2,51 @@ name: Backporting
 author: Thibault Derousseaux <tibdex@gmail.com>
 description: Automatically backport PRs to other branches by simply labeling them.
 inputs:
-  add_labels:
-    description: Comma separated list of labels to add to the backport PR.
-    required: false
+  body_template:
+    description: >
+      Lodash template for the backport PR's body.
+
+      The data properties are:
+        - base: backport PR's base branch
+        - body: original PR's body
+        - mergeCommitSha: SHA of the original PR's merge commit
+        - number: original PR's number
+    default: "Backport <%= mergeCommitSha %> from #<%= number %>"
+  head_template:
+    description: >
+      Lodash template for the backport PR's head branch.
+
+      The data properties are:
+        - base: backport PR's base branch
+        - number: original PR's number
+    default: "backport-<%= number %>-to-<%= base %>"
+  label_pattern:
+    description: >
+      The regular expression pattern that PR labels will be tested on to decide whether the PR should be backported and where.
+      The backport PR's base branch will be extracted from the pattern's required `base` named capturing group.
+    default: "^backport (?<base>([^ ]+))$"
+  labels_template:
+    description: >
+      Lodash template compiling to a JSON array of labels to add to the backport PR.
+
+      The data properties are:
+        - base: backport PR's base branch
+        - labels: array containing the original PR's labels
+    default: "[]"
   github_token:
     description: Token for the GitHub API.
     required: true
   title_template:
-    description: Template for the title of the backport PR.
-    required: false
-    default: "[Backport {{base}}] {{originalTitle}}"
+    description: >
+      Lodash template for the backport PR's title.
+
+      The data properties are:
+        - base: backport PR's base branch
+        - number: original PR's number
+        - title: original PR's title
+    default: "[Backport <%= base %>] <%= title %>"
 runs:
-  using: node12
+  using: node16
   main: dist/index.js
 branding:
   icon: arrow-left-circle

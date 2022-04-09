@@ -1,41 +1,39 @@
 {
   "name": "backport",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "license": "MIT",
+  "main": "dist/index.js",
   "files": [
     "action.yml",
     "dist"
   ],
-  "main": "dist/index.js",
   "scripts": {
-    "build": "ncc build src/index.ts --minify --v8-cache",
-    "check-prettier": "yarn run prettier --check",
-    "eslint": "eslint --ignore-path .gitignore --max-warnings 0 \"./**/*.{js,ts}\"",
-    "format-prettier": "yarn run prettier --write",
-    "prettier": "prettier --ignore-path .gitignore \"./**/*.{js,json,md,ts,yml}\""
+    "prebuild": "tsc --build",
+    "build": "ncc build src/index.ts --minify  --target es2021 --v8-cache",
+    "prettier": "prettier --ignore-path .gitignore \"./**/*.{cjs,js,json,md,ts,yml}\"",
+    "xo": "xo"
+  },
+  "dependencies": {
+    "@actions/core": "^1.6.0",
+    "@actions/exec": "^1.1.1",
+    "@actions/github": "^5.0.1",
+    "ensure-error": "^4.0.0",
+    "lodash-es": "^4.17.21"
   },
   "devDependencies": {
-    "@actions/core": "^1.2.6",
-    "@actions/exec": "^1.0.4",
-    "@actions/github": "^4.0.0",
-    "@octokit/webhooks": "^7.15.1",
-    "@types/lodash": "^4.14.164",
-    "@types/node": "^14.14.6",
-    "@types/promise-retry": "^1.1.3",
-    "@typescript-eslint/eslint-plugin": "^4.6.0",
-    "@typescript-eslint/parser": "^4.6.0",
-    "@vercel/ncc": "^0.24.1",
-    "eslint": "^7.12.1",
-    "eslint-config-prettier": "^6.15.0",
-    "eslint-config-xo": "^0.33.1",
-    "eslint-config-xo-typescript": "^0.35.0",
-    "eslint-import-resolver-typescript": "^2.3.0",
-    "eslint-plugin-import": "^2.22.1",
-    "eslint-plugin-sort-destructure-keys": "^1.3.5",
-    "eslint-plugin-typescript-sort-keys": "^1.5.0",
-    "eslint-plugin-unicorn": "^23.0.0",
-    "lodash": "^4.17.20",
-    "prettier": "^2.1.2",
-    "typescript": "^4.0.5"
+    "@octokit/webhooks-types": "^5.5.1",
+    "@types/error-cause": "^1.0.1",
+    "@types/lodash-es": "^4.17.6",
+    "@types/node": "^16.11.26",
+    "@vercel/ncc": "^0.33.3",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-sort-destructure-keys": "^1.4.0",
+    "eslint-plugin-typescript-sort-keys": "^2.1.0",
+    "prettier": "^2.6.2",
+    "prettier-plugin-packagejson": "^2.2.17",
+    "typescript": "^4.6.3",
+    "xo": "^0.48.0",
+    "yarn-deduplicate": "^4.0.0"
   }
 }
