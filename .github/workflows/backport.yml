@@ -14,10 +14,7 @@ jobs:
     if: >
       github.event.pull_request.merged
       && (
-        (
-          github.event.action == 'closed'
-          && contains(github.event.pull_request.labels.*.name, 'backport')
-        )
+        github.event.action == 'closed'
         || (
           github.event.action == 'labeled'
           && contains(github.event.label.name, 'backport')
@@ -25,6 +22,6 @@ jobs:
       )
     steps:
       - name: Backport
-        uses: tibdex/backport@v1
+        uses: tibdex/backport@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

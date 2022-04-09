@@ -31,7 +31,7 @@ inputs:
 
       The data properties are:
         - base: backport PR's base branch
-        - labels: array containing the original PR's labels
+        - labels: array containing the original PR's labels, excluding those matching `label_pattern`.
     default: "[]"
   github_token:
     description: Token for the GitHub API.
