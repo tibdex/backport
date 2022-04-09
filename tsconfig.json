@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "noEmit": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noEmitOnError": true,
     "strict": true,
-    "target": "es2021",
-    "types": ["node", "error-cause/auto"]
+    "target": "esnext",
+    "types": ["node"]
   },
-  "include": ["src"]
+  "include": [".*.js", "*.js", "src"]
 }
