@@ -269,7 +269,9 @@ const backport = async ({
     const head = getHead({ base, number });
     const labels = getLabels({
       base,
-      labels: originalLabels.map(({ name }) => name),
+      labels: originalLabels
+        .map(({ name }) => name)
+        .filter((label) => !labelRegExp.test(label)),
     });
     const title = getTitle({ base, number, title: originalTitle });
 
