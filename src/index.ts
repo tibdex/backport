@@ -1,4 +1,4 @@
-import { getInput, setFailed } from "@actions/core";
+import { getInput, setFailed, setOutput } from "@actions/core";
 import { context } from "@actions/github";
 import type { PullRequestEvent } from "@octokit/webhooks-types";
 import ensureError from "ensure-error";
@@ -42,7 +42,7 @@ const run = async () => {
       );
     }
 
-    await backport({
+    const createdPullRequestBaseBranchToNumber = await backport({
       getBody,
       getHead,
       getLabels,
@@ -51,6 +51,10 @@ const run = async () => {
       payload,
       token,
     });
+    setOutput(
+      "created_pull_requests",
+      JSON.stringify(createdPullRequestBaseBranchToNumber),
+    );
   } catch (_error: unknown) {
     const error = ensureError(_error);
     setFailed(error);

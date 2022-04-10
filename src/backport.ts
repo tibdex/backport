@@ -213,7 +213,7 @@ const backport = async ({
   labelRegExp: RegExp;
   payload: PullRequestClosedEvent | PullRequestLabeledEvent;
   token: string;
-}) => {
+}): { [base: string]: number } => {
   const {
     pull_request: {
       body: originalBody,
@@ -240,7 +240,7 @@ const backport = async ({
 
   if (baseBranches.length === 0) {
     info("Nothing to do");
-    return;
+    return {};
   }
 
   const github = getOctokit(token);
@@ -260,6 +260,8 @@ const backport = async ({
     "github-actions[bot]@users.noreply.github.com",
   ]);
   await exec("git", ["config", "--global", "user.name", "github-actions[bot]"]);
+
+  const createdPullRequestBaseBranchToNumber: { [base: string]: number } = {};
 
   for (const base of baseBranches) {
     const body = getBody({
@@ -292,6 +294,7 @@ const backport = async ({
           repo,
           title,
         });
+        createdPullRequestBaseBranchToNumber[base] = backportPullRequestNumber;
         info(`PR #${backportPullRequestNumber} has been created`);
       } catch (_error: unknown) {
         const error = ensureError(_error);
@@ -313,6 +316,8 @@ const backport = async ({
         );
       }
     });
+
+    return createdPullRequestBaseBranchToNumber;
   }
 };
 
