@@ -7,8 +7,8 @@ on:
 
 jobs:
   backport:
-    runs-on: ubuntu-18.04
     name: Backport
+    runs-on: ubuntu-latest
     # Only react to merged PRs for security reasons.
     # See https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target.
     if: >
@@ -21,7 +21,6 @@ jobs:
         )
       )
     steps:
-      - name: Backport
-        uses: tibdex/backport@v2
+      - uses: tibdex/backport@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

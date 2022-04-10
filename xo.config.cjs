@@ -4,8 +4,15 @@ module.exports = {
   extends: ["prettier"],
   overrides: [
     {
-      files: "**/*.{ts,tsx}",
+      files: "**/*.ts",
       rules: {
+        // Index signatures are slightly more legible since the key must be named.
+        "@typescript-eslint/consistent-indexed-object-style": [
+          "error",
+          "index-signature",
+        ],
+        // Too restrictive.
+        "@typescript-eslint/restrict-template-expressions": "off",
         // Covered by TypeScript.
         "default-case": "off",
       },

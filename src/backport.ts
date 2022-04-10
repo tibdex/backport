@@ -91,11 +91,11 @@ const backportOnce = async ({
   commitSha: string;
   github: InstanceType<typeof GitHub>;
   head: string;
-  labels: string[];
+  labels: readonly string[];
   owner: string;
   repo: string;
   title: string;
-}>) => {
+}>): Promise<number> => {
   const git = async (...args: string[]) => {
     await exec("git", args, { cwd: repo });
   };
@@ -125,12 +125,15 @@ const backportOnce = async ({
       "PUT /repos/{owner}/{repo}/issues/{issue_number}/labels",
       {
         issue_number: number,
-        labels,
+        labels: [...labels],
         owner,
         repo,
       },
     );
   }
+
+  info(`PR #${number} has been created.`);
+  return number;
 };
 
 const getFailedBackportCommentBody = ({
@@ -212,7 +215,7 @@ const backport = async ({
   labelRegExp: RegExp;
   payload: PullRequestClosedEvent | PullRequestLabeledEvent;
   token: string;
-}) => {
+}): Promise<{ [base: string]: number }> => {
   const {
     pull_request: {
       body: originalBody,
@@ -238,14 +241,15 @@ const backport = async ({
   const baseBranches = getBaseBranches({ labelRegExp, payload });
 
   if (baseBranches.length === 0) {
-    return;
+    info("No backports required.");
+    return {};
   }
 
   const github = getOctokit(token);
 
   await warnIfSquashIsNotTheOnlyAllowedMergeMethod({ github, owner, repo });
 
-  info(`Backporting ${mergeCommitSha} from #${number}`);
+  info(`Backporting ${mergeCommitSha} from #${number}.`);
 
   await exec("git", [
     "clone",
@@ -258,6 +262,8 @@ const backport = async ({
     "github-actions[bot]@users.noreply.github.com",
   ]);
   await exec("git", ["config", "--global", "user.name", "github-actions[bot]"]);
+
+  const createdPullRequestBaseBranchToNumber: { [base: string]: number } = {};
 
   for (const base of baseBranches) {
     const body = getBody({
@@ -277,9 +283,9 @@ const backport = async ({
 
     // PRs are handled sequentially to avoid breaking GitHub's log grouping feature.
     // eslint-disable-next-line no-await-in-loop
-    await group(`Backporting to ${base} on ${head}`, async () => {
+    await group(`Backporting to ${base} on ${head}.`, async () => {
       try {
-        await backportOnce({
+        const backportPullRequestNumber = await backportOnce({
           base,
           body,
           commitSha: mergeCommitSha,
@@ -290,6 +296,7 @@ const backport = async ({
           repo,
           title,
         });
+        createdPullRequestBaseBranchToNumber[base] = backportPullRequestNumber;
       } catch (_error: unknown) {
         const error = ensureError(_error);
         logError(error);
@@ -311,6 +318,8 @@ const backport = async ({
       }
     });
   }
+
+  return createdPullRequestBaseBranchToNumber;
 };
 
 export { backport };
