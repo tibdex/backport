@@ -95,7 +95,7 @@ const backportOnce = async ({
   owner: string;
   repo: string;
   title: string;
-}>) => {
+}>): number => {
   const git = async (...args: string[]) => {
     await exec("git", args, { cwd: repo });
   };
@@ -131,6 +131,7 @@ const backportOnce = async ({
       },
     );
   }
+  return number;
 };
 
 const getFailedBackportCommentBody = ({
@@ -238,6 +239,7 @@ const backport = async ({
   const baseBranches = getBaseBranches({ labelRegExp, payload });
 
   if (baseBranches.length === 0) {
+    info("Nothing to do");
     return;
   }
 
@@ -279,7 +281,7 @@ const backport = async ({
     // eslint-disable-next-line no-await-in-loop
     await group(`Backporting to ${base} on ${head}`, async () => {
       try {
-        await backportOnce({
+        const backportPullRequestNumber = await backportOnce({
           base,
           body,
           commitSha: mergeCommitSha,
@@ -290,6 +292,7 @@ const backport = async ({
           repo,
           title,
         });
+        info(`PR #${backportPullRequestNumber} has been created`);
       } catch (_error: unknown) {
         const error = ensureError(_error);
         logError(error);

@@ -11,7 +11,7 @@ inputs:
         - body: original PR's body
         - mergeCommitSha: SHA of the original PR's merge commit
         - number: original PR's number
-    default: "Backport <%= mergeCommitSha %> from #<%= number %>"
+    default: "Backport <%= mergeCommitSha %> from #<%= number %>."
   head_template:
     description: >
       Lodash template for the backport PR's head branch.
