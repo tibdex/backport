@@ -14,9 +14,6 @@ const run = async () => {
       "title_template",
     ].map((name) => template(getInput(name)));
 
-    const labelPattern = getInput("label_pattern");
-    const token = getInput("github_token", { required: true });
-
     const getLabels = ({
       base,
       labels,
@@ -32,7 +29,14 @@ const run = async () => {
       }
     };
 
+    const labelPattern = getInput("label_pattern");
     const labelRegExp = new RegExp(labelPattern);
+
+    const token = getInput("github_token", { required: true });
+
+    if (!context.payload.pull_request) {
+      throw new Error(`Unsupported event action: ${context.payload.action}.`);
+    }
 
     const payload = context.payload as PullRequestEvent;
 

@@ -1,6 +1,7 @@
 name: Backporting
 author: Thibault Derousseaux <tibdex@gmail.com>
-description: Automatically backport PRs to other branches by simply labeling them.
+description: >
+  Automatically backport PRs to other branches by simply labeling them.
 inputs:
   body_template:
     description: >
@@ -12,6 +13,9 @@ inputs:
         - mergeCommitSha: SHA of the original PR's merge commit
         - number: original PR's number
     default: "Backport <%= mergeCommitSha %> from #<%= number %>."
+  github_token:
+    description: Token for the GitHub API.
+    required: true
   head_template:
     description: >
       Lodash template for the backport PR's head branch.
@@ -33,9 +37,6 @@ inputs:
         - base: backport PR's base branch
         - labels: array containing the original PR's labels, excluding those matching `label_pattern`.
     default: "[]"
-  github_token:
-    description: Token for the GitHub API.
-    required: true
   title_template:
     description: >
       Lodash template for the backport PR's title.
@@ -47,7 +48,7 @@ inputs:
     default: "[Backport <%= base %>] <%= title %>"
 outputs:
   created_pull_requests:
-    description: An JSON stringified object mapping the base branch of the created pull requests to their number.
+    description: A JSON stringified object mapping the base branch of the created pull requests to their number.
 runs:
   using: node16
   main: dist/index.js
