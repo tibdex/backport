@@ -251,10 +251,11 @@ const backport = async ({
 
   info(`Backporting ${mergeCommitSha} from #${number}.`);
 
-  await exec("git", [
-    "clone",
-    `https://x-access-token:${token}@github.com/${owner}/${repo}.git`,
-  ]);
+  const cloneUrl = new URL(payload.repository.clone_url);
+  cloneUrl.username = "x-access-token";
+  cloneUrl.password = token;
+
+  await exec("git", ["clone", cloneUrl.toString()]);
   await exec("git", [
     "config",
     "--global",
