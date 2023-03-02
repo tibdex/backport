@@ -7,11 +7,12 @@ import { backport } from "./backport.js";
 
 const run = async () => {
   try {
-    const [getBody, getHead, _getLabels, getTitle] = [
+    const [getBody, getHead, _getLabels, getTitle, getMergedBy] = [
       "body_template",
       "head_template",
       "labels_template",
       "title_template",
+      "merged_by_template"
     ].map((name) => template(getInput(name)));
 
     const getLabels = ({
@@ -51,6 +52,7 @@ const run = async () => {
       getHead,
       getLabels,
       getTitle,
+      getMergedBy,
       labelRegExp,
       payload,
       token,
