@@ -85,6 +85,7 @@ const backportOnce = async ({
   owner,
   repo,
   title,
+  merged_by,
 }: Readonly<{
   base: string;
   body: string;
@@ -95,6 +96,7 @@ const backportOnce = async ({
   owner: string;
   repo: string;
   title: string;
+  merged_by: string;
 }>): Promise<number> => {
   const git = async (...args: string[]) => {
     await exec("git", args, { cwd: repo });
@@ -120,6 +122,14 @@ const backportOnce = async ({
     repo,
     title,
   });
+
+  await github.request("POST /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers", {
+    owner,
+    repo,
+    pull_number: number,
+    reviewers: [owner,merged_by],
+  });
+  
   if (labels.length > 0) {
     await github.request(
       "PUT /repos/{owner}/{repo}/issues/{issue_number}/labels",
@@ -181,6 +191,7 @@ const backport = async ({
   getHead,
   getLabels,
   getTitle,
+  getMergedBy, 
   labelRegExp,
   payload,
   token,
@@ -212,6 +223,13 @@ const backport = async ({
       title: string;
     }>,
   ) => string;
+  getMergedBy: (
+    props: Readonly<{
+      base: string;
+      number: number;
+      mergedBy: string | null;
+    }>,
+  ) => string;
   labelRegExp: RegExp;
   payload: PullRequestClosedEvent | PullRequestLabeledEvent;
   token: string;
@@ -222,6 +240,7 @@ const backport = async ({
       labels: originalLabels,
       merge_commit_sha: mergeCommitSha,
       merged,
+      merged_by: originalMergedBy,
       number,
       title: originalTitle,
     },
@@ -281,6 +300,7 @@ const backport = async ({
         .filter((label) => !labelRegExp.test(label)),
     });
     const title = getTitle({ base, number, title: originalTitle });
+    const merged_by = getMergedBy({ base, number, mergedBy: originalMergedBy!.login });
 
     // PRs are handled sequentially to avoid breaking GitHub's log grouping feature.
     // eslint-disable-next-line no-await-in-loop
@@ -296,6 +316,7 @@ const backport = async ({
           owner,
           repo,
           title,
+          merged_by
         });
         createdPullRequestBaseBranchToNumber[base] = backportPullRequestNumber;
       } catch (_error: unknown) {

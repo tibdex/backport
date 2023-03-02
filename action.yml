@@ -46,6 +46,13 @@ inputs:
         - number: original PR's number
         - title: original PR's title
     default: "[Backport <%= base %>] <%= title %>"
+  merged_by:
+    description: >
+      Lodash template for the backport PR's merged by user.
+
+      The data properties are:
+        - name: original PR's merged by user name
+    default: "<%= name %>"
 outputs:
   created_pull_requests:
     description: A JSON stringified object mapping the base branch of the created pull requests to their number.
