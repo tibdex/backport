@@ -123,13 +123,16 @@ const backportOnce = async ({
     title,
   });
 
-  await github.request("POST /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers", {
-    owner,
-    repo,
-    pull_number: number,
-    reviewers: [owner,merged_by],
-  });
-  
+  await github.request(
+    "POST /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers",
+    {
+      owner,
+      repo,
+      pull_number: number,
+      reviewers: owner != merged_by ? [owner, merged_by] : [owner],
+    },
+  );
+
   if (labels.length > 0) {
     await github.request(
       "PUT /repos/{owner}/{repo}/issues/{issue_number}/labels",
@@ -191,7 +194,7 @@ const backport = async ({
   getHead,
   getLabels,
   getTitle,
-  getMergedBy, 
+  getMergedBy,
   labelRegExp,
   payload,
   token,
@@ -300,7 +303,11 @@ const backport = async ({
         .filter((label) => !labelRegExp.test(label)),
     });
     const title = getTitle({ base, number, title: originalTitle });
-    const merged_by = getMergedBy({ base, number, mergedBy: originalMergedBy!.login });
+    const merged_by = getMergedBy({
+      base,
+      number,
+      mergedBy: originalMergedBy!.login,
+    });
 
     // PRs are handled sequentially to avoid breaking GitHub's log grouping feature.
     // eslint-disable-next-line no-await-in-loop
@@ -316,7 +323,7 @@ const backport = async ({
           owner,
           repo,
           title,
-          merged_by
+          merged_by,
         });
         createdPullRequestBaseBranchToNumber[base] = backportPullRequestNumber;
       } catch (_error: unknown) {

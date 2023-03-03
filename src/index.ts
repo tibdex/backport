@@ -12,7 +12,7 @@ const run = async () => {
       "head_template",
       "labels_template",
       "title_template",
-      "merged_by_template"
+      "merged_by_template",
     ].map((name) => template(getInput(name)));
 
     const getLabels = ({
