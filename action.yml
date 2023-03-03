@@ -12,7 +12,7 @@ inputs:
         - body: original PR's body
         - mergeCommitSha: SHA of the original PR's merge commit
         - number: original PR's number
-    default: "<%- body %> /n Backport <%= mergeCommitSha %> from #<%= number %>"
+    default: "<%- body %> <br> Backport <%= mergeCommitSha %> from #<%= number %>"
   github_token:
     description: Token for the GitHub API.
     required: true

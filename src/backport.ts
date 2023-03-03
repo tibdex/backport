@@ -76,6 +76,7 @@ const warnIfSquashIsNotTheOnlyAllowedMergeMethod = async ({
 };
 
 const backportOnce = async ({
+  author,
   base,
   body,
   commitSha,
@@ -87,6 +88,7 @@ const backportOnce = async ({
   title,
   merged_by,
 }: Readonly<{
+  author: string;
   base: string;
   body: string;
   commitSha: string;
@@ -122,14 +124,14 @@ const backportOnce = async ({
     repo,
     title,
   });
-
+  info(`Author: ${author}, Merger: ${merged_by}.`);
   await github.request(
     "POST /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers",
     {
       owner,
       repo,
       pull_number: number,
-      reviewers: owner != merged_by ? [owner, merged_by] : [owner],
+      reviewers: author != merged_by ? [author, merged_by] : [owner],
     },
   );
 
@@ -239,6 +241,7 @@ const backport = async ({
 }): Promise<{ [base: string]: number }> => {
   const {
     pull_request: {
+      user: { login: author },
       body: originalBody,
       labels: originalLabels,
       merge_commit_sha: mergeCommitSha,
@@ -314,6 +317,7 @@ const backport = async ({
     await group(`Backporting to ${base} on ${head}.`, async () => {
       try {
         const backportPullRequestNumber = await backportOnce({
+          author,
           base,
           body,
           commitSha: mergeCommitSha,
