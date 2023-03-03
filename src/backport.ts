@@ -134,7 +134,7 @@ const backportOnce = async ({
       reviewers: author != merged_by ? [author, merged_by] : [owner],
     },
   );
-
+  info (`Label Length ${labels.length},Labels: ${labels}`);
   if (labels.length > 0) {
     await github.request(
       "PUT /repos/{owner}/{repo}/issues/{issue_number}/labels",
