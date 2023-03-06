@@ -298,21 +298,22 @@ const backport = async ({
       number,
     });
     const head = getHead({ base, number });
-    info(`Original Labels: ${originalLabels}`);
+    info(`Original Labels: ${JSON.stringify(originalLabels)}`);
     const labels = getLabels({
       base,
       labels: originalLabels
         .map(({ name }) => name)
         .filter((label) => !labelRegExp.test(label)),
     });
-    info(`Filtered Labels: ${labels}`);
+    info(`Filtered Labels: ${JSON.stringify(labels)}`);
     const title = getTitle({ base, number, title: originalTitle });
-    info(`Original Merger: ${originalMergedBy}`);
+    info(`Original Merger: ${JSON.stringify(originalMergedBy)}`);
     const merged_by = getMergedBy({
       base,
       number,
       mergedBy: originalMergedBy?.login ?? null,
     });
+    info(`Filtered Merger: ${JSON.stringify(merged_by)}`);
 
     // PRs are handled sequentially to avoid breaking GitHub's log grouping feature.
     // eslint-disable-next-line no-await-in-loop
