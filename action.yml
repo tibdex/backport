@@ -36,6 +36,7 @@ inputs:
       The data properties are:
         - base: backport PR's base branch
         - labels: array containing the original PR's labels, excluding those matching `label_pattern`.
+    default: "[<%= labels.map(label => `'${label.name}'`).join(', ') %>]"
   title_template:
     description: >
       Lodash template for the backport PR's title.
