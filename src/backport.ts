@@ -43,7 +43,7 @@ const getBaseBranches = ({
     const base = getBaseBranchFromLabel(payload.label.name, labelRegExp);
     return base ? [base] : [];
   }
-
+  info(`Labels: ${JSON.stringify(payload.pull_request.labels)}.`);
   return compact(
     payload.pull_request.labels.map((label) =>
       getBaseBranchFromLabel(label.name, labelRegExp),
@@ -264,8 +264,6 @@ const backport = async ({
   }
 
   const baseBranches = getBaseBranches({ labelRegExp, payload });
-  info(`Base branches Payload: ${JSON.stringify(payload)}`);
-
   if (baseBranches.length === 0) {
     info("No backports required.");
     return {};
