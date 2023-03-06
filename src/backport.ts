@@ -134,7 +134,7 @@ const backportOnce = async ({
       reviewers: author != merged_by ? [author, merged_by] : [owner],
     },
   );
-  info (`Label Length ${labels.length},Labels: ${labels}`);
+  info(`Label Length ${labels.length},Labels: ${labels}`);
   if (labels.length > 0) {
     await github.request(
       "PUT /repos/{owner}/{repo}/issues/{issue_number}/labels",
@@ -264,6 +264,7 @@ const backport = async ({
   }
 
   const baseBranches = getBaseBranches({ labelRegExp, payload });
+  info(`Base branches Payload: ${JSON.stringify(payload)}`);
 
   if (baseBranches.length === 0) {
     info("No backports required.");
@@ -299,17 +300,20 @@ const backport = async ({
       number,
     });
     const head = getHead({ base, number });
+    info(`Original Labels: ${originalLabels}`);
     const labels = getLabels({
       base,
       labels: originalLabels
         .map(({ name }) => name)
         .filter((label) => !labelRegExp.test(label)),
     });
+    info(`Filtered Labels: ${originalLabels}`);
     const title = getTitle({ base, number, title: originalTitle });
+    info(`Original Merger: ${originalMergedBy}}`);
     const merged_by = getMergedBy({
       base,
       number,
-      mergedBy: originalMergedBy!.login,
+      mergedBy: originalMergedBy?.login ?? null,
     });
 
     // PRs are handled sequentially to avoid breaking GitHub's log grouping feature.

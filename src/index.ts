@@ -1,4 +1,4 @@
-import { getInput, setFailed, setOutput } from "@actions/core";
+import { getInput, info, setFailed, setOutput } from "@actions/core";
 import { context } from "@actions/github";
 import type { PullRequestEvent } from "@octokit/webhooks-types";
 import ensureError from "ensure-error";
@@ -20,6 +20,7 @@ const run = async () => {
       labels,
     }: Readonly<{ base: string; labels: readonly string[] }>): string[] => {
       const json = _getLabels({ base, labels });
+      info(`Labels template result: ${json}.`);
       try {
         return JSON.parse(json) as string[];
       } catch (_error: unknown) {

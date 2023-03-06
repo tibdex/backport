@@ -36,7 +36,6 @@ inputs:
       The data properties are:
         - base: backport PR's base branch
         - labels: array containing the original PR's labels, excluding those matching `label_pattern`.
-    default: "[]"
   title_template:
     description: >
       Lodash template for the backport PR's title.
@@ -51,8 +50,8 @@ inputs:
       Lodash template for the backport PR's merged by user.
 
       The data properties are:
-        - name: original PR's merged by user name
-    default: "<%= name %>"
+        - login: original PR's merged by user name
+    required: false
 outputs:
   created_pull_requests:
     description: A JSON stringified object mapping the base branch of the created pull requests to their number.
