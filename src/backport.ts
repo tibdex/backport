@@ -305,9 +305,9 @@ const backport = async ({
         .map(({ name }) => name)
         .filter((label) => !labelRegExp.test(label)),
     });
-    info(`Filtered Labels: ${originalLabels}`);
+    info(`Filtered Labels: ${labels}`);
     const title = getTitle({ base, number, title: originalTitle });
-    info(`Original Merger: ${originalMergedBy}}`);
+    info(`Original Merger: ${originalMergedBy}`);
     const merged_by = getMergedBy({
       base,
       number,
