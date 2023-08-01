@@ -1,39 +1,41 @@
 {
   "name": "backport",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "license": "MIT",
   "main": "dist/index.js",
+  "type": "module",
   "files": [
     "action.yml",
     "dist"
   ],
   "scripts": {
     "prebuild": "tsc --build",
-    "build": "ncc build src/index.ts --minify  --target es2021 --v8-cache",
+    "build": "ncc build src/index.ts --minify  --target es2022 --v8-cache",
     "prettier": "prettier --ignore-path .gitignore \"./**/*.{cjs,js,json,md,ts,yml}\"",
     "xo": "xo"
   },
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1",
-    "@actions/github": "^5.0.1",
+    "@actions/github": "^5.1.1",
     "ensure-error": "^4.0.0",
     "lodash-es": "^4.17.21"
   },
   "devDependencies": {
-    "@octokit/webhooks-types": "^5.5.1",
+    "@trivago/prettier-plugin-sort-imports": "^4.2.0",
+    "@octokit/webhooks-types": "^7.1.0",
     "@types/error-cause": "^1.0.1",
-    "@types/lodash-es": "^4.17.6",
-    "@types/node": "^16.11.26",
-    "@vercel/ncc": "^0.33.3",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-sort-destructure-keys": "^1.4.0",
-    "eslint-plugin-typescript-sort-keys": "^2.1.0",
-    "prettier": "^2.6.2",
-    "prettier-plugin-packagejson": "^2.2.17",
-    "typescript": "^4.6.3",
-    "xo": "^0.48.0",
-    "yarn-deduplicate": "^4.0.0"
+    "@types/lodash-es": "^4.17.8",
+    "@types/node": "^20.4.5",
+    "@vercel/ncc": "^0.36.1",
+    "eslint-config-prettier": "^8.9.0",
+    "eslint-plugin-import": "^2.28.0",
+    "eslint-plugin-sort-destructure-keys": "^1.5.0",
+    "eslint-plugin-typescript-sort-keys": "^2.3.0",
+    "prettier": "^3.0.0",
+    "prettier-plugin-packagejson": "^2.4.5",
+    "typescript": "^5.1.6",
+    "xo": "^0.55.0",
+    "yarn-deduplicate": "^6.0.2"
   }
 }
