@@ -15,7 +15,7 @@ const getBaseBranchFromLabel = (
 ): string | undefined => {
   const result = labelRegExp.exec(label);
 
-  if (!result || !result.groups) {
+  if (!result?.groups) {
     return;
   }
 
@@ -63,6 +63,7 @@ const warnIfSquashIsNotTheOnlyAllowedMergeMethod = async ({
   const {
     data: { allow_merge_commit, allow_rebase_merge },
   } = await github.request("GET /repos/{owner}/{repo}", { owner, repo });
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
   if (allow_merge_commit || allow_rebase_merge) {
     warning(
       [
