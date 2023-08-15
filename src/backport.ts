@@ -104,7 +104,7 @@ const backportOnce = async ({
   await git("switch", base);
   await git("switch", "--create", head);
   try {
-    await git("cherry-pick", "-x", commitSha);
+    await git("cherry-pick", "-x", "--mainline", "1", commitSha);
   } catch (error: unknown) {
     await git("cherry-pick", "--abort");
     throw error;
