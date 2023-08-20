@@ -184,6 +184,8 @@ const backport = async ({
   getTitle,
   labelRegExp,
   payload,
+  committerEmail,
+  committerName,
   token,
 }: {
   getBody: (
@@ -215,6 +217,8 @@ const backport = async ({
   ) => string;
   labelRegExp: RegExp;
   payload: PullRequestClosedEvent | PullRequestLabeledEvent;
+  committerName: string;
+  committerEmail: string;
   token: string;
 }): Promise<{ [base: string]: number }> => {
   const {
@@ -261,9 +265,9 @@ const backport = async ({
     "config",
     "--global",
     "user.email",
-    "github-actions[bot]@users.noreply.github.com",
+    committerEmail,
   ]);
-  await exec("git", ["config", "--global", "user.name", "github-actions[bot]"]);
+  await exec("git", ["config", "--global", "user.name", committerName]);
 
   const createdPullRequestBaseBranchToNumber: { [base: string]: number } = {};
 

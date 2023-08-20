@@ -16,6 +16,14 @@ inputs:
   github_token:
     description: Token for the GitHub API.
     required: true
+  committer_name:
+    description: Email used for commits created by this action.
+    default: "github-actions[bot]"
+    required: false
+  committer_email:
+    description: Email used for commits created by this action.
+    default: "github-actions[bot]@users.noreply.github.com"
+    required: false
   head_template:
     description: >
       Lodash template for the backport PR's head branch.
