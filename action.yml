@@ -9,6 +9,7 @@ inputs:
 
       The data properties are:
         - base: backport PR's base branch
+        - title: original PR's title
         - body: original PR's body
         - mergeCommitSha: SHA of the original PR's merge commit
         - number: original PR's number
