@@ -189,6 +189,7 @@ const backport = async ({
   getBody: (
     props: Readonly<{
       base: string;
+      title: string;
       body: string;
       mergeCommitSha: string;
       number: number;
@@ -270,6 +271,7 @@ const backport = async ({
   for (const base of baseBranches) {
     const body = getBody({
       base,
+      title: originalTitle,
       body: originalBody ?? "",
       mergeCommitSha,
       number,
