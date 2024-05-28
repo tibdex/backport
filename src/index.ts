@@ -33,6 +33,7 @@ const run = async () => {
     const labelRegExp = new RegExp(labelPattern);
 
     const token = getInput("github_token", { required: true });
+    const sshKey = getInput("ssh-key", { required: true });
 
     if (!context.payload.pull_request) {
       throw new Error(`Unsupported event action: ${context.payload.action}.`);
@@ -54,6 +55,7 @@ const run = async () => {
       labelRegExp,
       payload,
       token,
+      sshKey,
     });
     setOutput(
       "created_pull_requests",

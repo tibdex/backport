@@ -16,6 +16,9 @@ inputs:
   github_token:
     description: Token for the GitHub API.
     required: true
+  ssh-key:
+    description: SSH Key to commit backport PRs.
+    required: true
   head_template:
     description: >
       Lodash template for the backport PR's head branch.
@@ -50,7 +53,7 @@ outputs:
   created_pull_requests:
     description: A JSON stringified object mapping the base branch of the created pull requests to their number.
 runs:
-  using: node16
+  using: node20
   main: dist/index.js
 branding:
   icon: arrow-left-circle

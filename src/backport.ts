@@ -185,6 +185,7 @@ const backport = async ({
   labelRegExp,
   payload,
   token,
+  sshKey
 }: {
   getBody: (
     props: Readonly<{
@@ -252,11 +253,12 @@ const backport = async ({
 
   info(`Backporting ${mergeCommitSha} from #${number}.`);
 
-  const cloneUrl = new URL(payload.repository.clone_url);
-  cloneUrl.username = "x-access-token";
-  cloneUrl.password = token;
+  await exec("mkdir", ["-p", "~/.ssh"])
+  await exec("echo", [sshKey, ">", "~/.ssh/id_rsa"])
+  await exec("chmod", ["600", "~/.ssh/id_rsa"])
+  await exec("ssh-keyscan", ["github.com", ">>", "~/.ssh/known_hosts"])
 
-  await exec("git", ["clone", cloneUrl.toString()]);
+  await exec("git", ["clone", `git@github.,com:${owner}/${repo}.git`]);
   await exec("git", [
     "config",
     "--global",
