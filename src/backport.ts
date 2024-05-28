@@ -259,7 +259,7 @@ const backport = async ({
   await exec("chmod", ["600", "~/.ssh/id_rsa"])
   await exec("ssh-keyscan", ["github.com", ">>", "~/.ssh/known_hosts"])
 
-  await exec("git", ["clone", `git@github.,com:${owner}/${repo}.git`]);
+  await exec("git", ["clone", `git@github.com:${owner}/${repo}.git`]);
   await exec("git", [
     "config",
     "--global",
