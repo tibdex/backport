@@ -254,10 +254,10 @@ const backport = async ({
 
   info(`Backporting ${mergeCommitSha} from #${number}.`);
 
-  await exec("mkdir", ["-p", "~/.ssh"])
-  await exec("echo", [sshKey, ">", "~/.ssh/id_rsa"])
-  await exec("chmod", ["600", "~/.ssh/id_rsa"])
-  await exec("ssh-keyscan", ["github.com", ">>", "~/.ssh/known_hosts"])
+  await exec("mkdir", ["-p", "~/.ssh"]);
+  await exec("echo", [sshKey, ">", "~/.ssh/id_rsa"]);
+  await exec("chmod", ["600", "~/.ssh/id_rsa"]);
+  await exec("ssh-keyscan", ["github.com", ">>", "~/.ssh/known_hosts"]);
 
   await exec("git", ["clone", `git@github.com:${owner}/${repo}.git`]);
   await exec("git", [
