@@ -54,8 +54,8 @@ const run = async () => {
       getTitle,
       labelRegExp,
       payload,
-      token,
       sshKey,
+      token,
     });
     setOutput(
       "created_pull_requests",

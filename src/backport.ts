@@ -184,8 +184,8 @@ const backport = async ({
   getTitle,
   labelRegExp,
   payload,
+  sshKey,
   token,
-  sshKey
 }: {
   getBody: (
     props: Readonly<{
@@ -216,6 +216,7 @@ const backport = async ({
   ) => string;
   labelRegExp: RegExp;
   payload: PullRequestClosedEvent | PullRequestLabeledEvent;
+  sshKey: string;
   token: string;
 }): Promise<{ [base: string]: number }> => {
   const {
