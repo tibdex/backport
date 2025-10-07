@@ -174,6 +174,12 @@ const getFailedBackportCommentBody = ({
     `git worktree remove ${worktreePath}`,
     "```",
     `Then, create a pull request where the \`base\` branch is \`${base}\` and the \`compare\`/\`head\` branch is \`${head}\`.`,
+    "The same operations in one line (use carefully)",
+    "```bash",
+    `git fetch && git worktree add ${worktreePath} ${base} && pushd ${worktreePath} && git switch --create ${head} && git cherry-pick -x --mainline 1 ${commitSha} && git mergetool`,
+    "# ... and after fixing all conflicts",
+    `git push --set-upstream origin ${head} && popd && git worktree remove ${worktreePath}`,
+    "```"
   ].join("\n");
 };
 
