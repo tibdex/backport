@@ -178,7 +178,7 @@ const getFailedBackportCommentBody = ({
     "```bash",
     `git fetch && git worktree add ${worktreePath} ${base} && pushd ${worktreePath} && git switch --create ${head} && git cherry-pick -x --mainline 1 ${commitSha} && git mergetool`,
     "# ... and after fixing all conflicts",
-    `git push --set-upstream origin ${head} && popd && git worktree remove ${worktreePath}`,
+    `git cherry-pick --continue && git push --set-upstream origin ${head} && popd && git worktree remove ${worktreePath}`,
     "```"
   ].join("\n");
 };
